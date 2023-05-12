@@ -1,1 +1,3 @@
 venv
+*.ipsw
+*.img3
