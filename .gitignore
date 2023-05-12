@@ -1,3 +1,7 @@
 venv
 *.ipsw
 *.img3
+.tmp
+*.dmg
+*.dfu
+*.decrypted
