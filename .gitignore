@@ -5,3 +5,5 @@ venv
 *.dmg
 *.dfu
 *.decrypted
+*.patched
+*.packed

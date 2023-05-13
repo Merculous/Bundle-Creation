@@ -180,10 +180,119 @@ def decrypt(keys_path):
             cmds.append(cmd)
 
     for cmd in cmds:
-        subprocess.run(cmd)
+        # FIXME
+        # Weird, this only works if ran inside a shell
+        subprocess.run(' '.join(cmd), shell=True)
+
+
+def createBundleFolder(name):
+    name = Path(f'bundles/{name}')
+
+    try:
+        name.mkdir()
+    except Exception:
+        print(f'{name} already exists!')
+
+
+def patchRamdisk(bundle):
+    ramdisk = None
+    for thing in Path().glob('*.decrypted'):
+        if '.dmg' in thing.name:
+            ramdisk = thing.name
+            break
+
+    extract_asr = (
+        'bin/hdutil',
+        ramdisk,
+        'cat',
+        '/usr/sbin/asr',
+        '>',
+        'asr'
+    )
+
+    subprocess.run(' '.join(extract_asr), shell=True)
+
+    create_patch = (
+        'bin/asrpatch',
+        'asr',
+        f'bundles/{bundle}/asr.patch'
+    )
+
+    subprocess.run(create_patch)
+
+
+def patchiBoot(bundle):
+    bootchain = []
+    iBoot = ('iBSS', 'iBEC', 'LLB', 'iBoot')
+
+    for thing in Path().glob('*'):
+        for name in iBoot:
+            if thing.name.startswith(name) and thing.name.endswith('.decrypted'):
+                bootchain.append(thing.name)
+
+    cmds = []
+
+    for name in bootchain:
+        cmd = [
+            'bin/iBoot32Patcher',
+            name,
+            f'{name}.patched',
+            '--rsa'
+        ]
+
+        if 'iBEC' in name or 'iBoot' in name:
+            cmd.append('-b -v')
+
+        cmds.append(cmd)
+
+        # FIXME
+        # Similar issue in decrypt()
+        # I think since everything I have in 'bin' are symlinks
+        # that it doesn't work correctly when not passing values
+        # to the 'binary', thus needing to run cmd as a shell command
+        # if I don't run the command as a shell command, the '-b -v'
+        # arg was never passed, thus only the '--rsa' is passed
+        subprocess.run(' '.join(cmd), shell=True)
+
+        orig = name.split('.decrypted')[0]
+        new = cmd[2]
+
+        pack = (
+            'bin/xpwntool',
+            new,
+            f'{new}.packed',
+            f'-t {orig}'
+        )
+
+        subprocess.run(' '.join(pack), shell=True)
+
+        bsdiff4.file_diff(orig, pack[2], f'bundles/{bundle}/{orig}.patch')
+
+
+def initInfoPlist(bundle):
+    pass
+
+
+def clean():
+    stuff = (
+        '.dmg',
+        '.decrypted',
+        '.dfu',
+        '.img3',
+        '.json',
+        '.patched',
+        '.packed'
+    )
+
+    for thing in Path().glob('*'):
+        for ext in stuff:
+            if thing.name.endswith(ext):
+                thing.unlink()
 
 
 def main():
+    clean()
+
     parser = ArgumentParser()
 
     parser.add_argument('--ipsw', nargs=1)
@@ -197,10 +306,13 @@ def main():
         data = readRestorePlist('.tmp/Restore.plist')
         writeJSON(data, 'Restore.json')
         restore_info = getRestoreInfo('Restore.json')
+        createBundleFolder(restore_info[0])
         getBootchainReady(restore_info[1])
         parseKeyTemplate(args.template[0])
         getKeys('Keys.json')
         decrypt('Keys.json')
+        patchRamdisk(restore_info[0])
+        patchiBoot(restore_info[0])
     else:
         parser.print_help()
 
