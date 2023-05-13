@@ -7,3 +7,6 @@ venv
 *.decrypted
 *.patched
 *.packed
+*.txt
+*.json
+asr
