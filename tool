@@ -268,6 +268,10 @@ def patchiBoot(bundle):
         orig = name.split('.decrypted')[0]
         new = cmd[2]
 
+        patch_name = orig.split('.')
+        patch_name[-1] = 'patch'
+        patch_name = '.'.join(patch_name)
+
         pack = (
             'bin/xpwntool',
             new,
@@ -277,7 +281,7 @@ def patchiBoot(bundle):
 
         subprocess.run(' '.join(pack), shell=True)
 
-        bsdiff4.file_diff(orig, pack[2], f'bundles/{bundle}/{orig}.patch')
+        bsdiff4.file_diff(orig, pack[2], f'bundles/{bundle}/{patch_name}')
 
 
 def getRootFSInfo():
@@ -353,25 +357,25 @@ def initInfoPlist(bundle, ipsw, board):
     ibss['File'] = bootchain_paths.get('iBSS')
     ibss['IV'] = keys.get('iBSS')[1]
     ibss['Key'] = keys.get('iBSS')[2]
-    ibss['Patch'] = f'{Path(ibss.get("File")).name}.patch'
+    ibss['Patch'] = Path(ibss.get("File")).name.replace(".dfu", ".patch")
 
     ibec = bootchain.get('iBEC')
     ibec['File'] = bootchain_paths.get('iBEC')
     ibec['IV'] = keys.get('iBEC')[1]
     ibec['Key'] = keys.get('iBEC')[2]
-    ibec['Patch'] = f'{Path(ibec.get("File")).name}.patch'
+    ibec['Patch'] = Path(ibec.get("File")).name.replace(".dfu", ".patch")
 
     llb = bootchain.get('LLB')
     llb['File'] = bootchain_paths.get('LLB')
     llb['IV'] = keys.get('LLB')[1]
     llb['Key'] = keys.get('LLB')[2]
-    llb['Patch'] = f'{Path(llb.get("File")).name}.patch'
+    llb['Patch'] = Path(llb.get("File")).name.replace(".img3", ".patch")
 
     iboot = bootchain.get('iBoot')
     iboot['File'] = bootchain_paths.get('iBoot')
     iboot['IV'] = keys.get('iBoot')[1]
     iboot['Key'] = keys.get('iBoot')[2]
-    iboot['Patch'] = f'{Path(iboot.get("File")).name}.patch'
+    iboot['Patch'] = Path(iboot.get("File")).name.replace(".img3", ".patch")
 
     # Check if there are files that aren't encrypted
     # If so, then if there's a "Not Encrypted" string
