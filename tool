@@ -345,7 +345,7 @@ def initInfoPlist(bundle, ipsw, board):
     bootchain = plist_data.get('FirmwarePatches')
 
     ramdisk = bootchain.get('Restore Ramdisk')
-    ramdisk['File'] = keys.get('ramdisk')[0]
+    ramdisk['File'] = f'{keys.get("ramdisk")[0]}.dmg'
     ramdisk['IV'] = keys.get('ramdisk')[1]
     ramdisk['Key'] = keys.get('ramdisk')[2]
 
