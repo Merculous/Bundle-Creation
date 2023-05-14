@@ -294,6 +294,16 @@ def initInfoPlist(bundle, ipsw, board):
         'patch'
     ]
 
+    dfu_path = 'Firmware/dfu'
+    other_path = f'Firmware/all_flash/all_flash.{board}.production'
+
+    bootchain_paths = {
+        'iBSS': f'{dfu_path}/iBSS.{board}.RELEASE.dfu',
+        'iBEC': f'{dfu_path}/iBEC.{board}.RELEASE.dfu',
+        'LLB': f'{other_path}/LLB.{board}.RELEASE.img3',
+        'iBoot': f'{other_path}/iBoot.{board}.RELEASE.img3'
+    }
+
     plist_data['Filename'] = ipsw
     plist_data['Name'] = ipsw.split('_Restore.ipsw')[0]
 
@@ -305,28 +315,28 @@ def initInfoPlist(bundle, ipsw, board):
     ramdisk['Key'] = keys.get('ramdisk')[2]
 
     ibss = bootchain.get('iBSS')
-    ibss['File'] = keys.get('iBSS')[0]
+    ibss['File'] = bootchain_paths.get('iBSS')
     ibss['IV'] = keys.get('iBSS')[1]
     ibss['Key'] = keys.get('iBSS')[2]
-    ibss['Patch'] = f'{ibss.get("File")}.patch'
+    ibss['Patch'] = f'{Path(ibss.get("File")).name}.patch'
 
     ibec = bootchain.get('iBEC')
-    ibec['File'] = keys.get('iBEC')[0]
+    ibec['File'] = bootchain_paths.get('iBEC')
     ibec['IV'] = keys.get('iBEC')[1]
     ibec['Key'] = keys.get('iBEC')[2]
-    ibec['Patch'] = f'{ibec.get("File")}.patch'
+    ibec['Patch'] = f'{Path(ibec.get("File")).name}.patch'
 
     llb = bootchain.get('LLB')
-    llb['File'] = keys.get('LLB')[0]
+    llb['File'] = bootchain_paths.get('LLB')
     llb['IV'] = keys.get('LLB')[1]
     llb['Key'] = keys.get('LLB')[2]
-    llb['Patch'] = f'{llb.get("File")}.patch'
+    llb['Patch'] = f'{Path(llb.get("File")).name}.patch'
 
     iboot = bootchain.get('iBoot')
-    iboot['File'] = keys.get('iBoot')[0]
+    iboot['File'] = bootchain_paths.get('iBoot')
     iboot['IV'] = keys.get('iBoot')[1]
     iboot['Key'] = keys.get('iBoot')[2]
-    iboot['Patch'] = f'{iboot.get("File")}.patch'
+    iboot['Patch'] = f'{Path(iboot.get("File")).name}.patch'
 
     # Check if there are files that aren't encrypted
     # If so, then if there's a "Not Encrypted" string
