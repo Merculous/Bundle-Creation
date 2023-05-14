@@ -49,7 +49,7 @@ def getRestoreInfo(path):
 
     Path('Restore.json').unlink()
 
-    return (bundle_name, ramdisk)
+    return (bundle_name, ramdisk, board)
 
 
 def getBootchainReady(ramdisk):
@@ -108,22 +108,27 @@ def getKeys(path):
 
     needed_keys = {
         'ramdisk': [
+            data.get('RestoreRamdisk'),
             data.get('RestoreRamdiskIV'),
             data.get('RestoreRamdiskKey')
         ],
         'iBSS': [
+            data.get('iBSS'),
             data.get('iBSSIV'),
             data.get('iBSSKey')
         ],
         'iBEC': [
+            data.get('iBEC'),
             data.get('iBECIV'),
             data.get('iBECKey')
         ],
         'LLB': [
+            data.get('LLB'),
             data.get('LLBIV'),
             data.get('LLBKey')
         ],
         'iBoot': [
+            data.get('iBoot'),
             data.get('iBootIV'),
             data.get('iBootKey')
         ]
@@ -150,12 +155,12 @@ def decrypt(keys_path):
         iv, k = None, None
 
         if path.name.endswith('.dmg'):
-            iv, k = keys.get('ramdisk')
+            filename, iv, k = keys.get('ramdisk')
             info.update({path.name: [iv, k]})
 
         for name in keys:
             if name in path.name:
-                iv, k = keys.get(name)
+                filename, iv, k = keys.get(name)
                 info.update({path.name: [iv, k]})
 
     cmds = []
@@ -269,8 +274,79 @@ def patchiBoot(bundle):
         bsdiff4.file_diff(orig, pack[2], f'bundles/{bundle}/{orig}.patch')
 
 
-def initInfoPlist(bundle):
-    pass
+# FIXME
+# This function below is garbage and needs to be updated
+
+
+def initInfoPlist(bundle, ipsw, board):
+    with open('Info.plist', 'rb') as f:
+        plist_data = plistlib.load(f)
+
+    with open('Keys.json') as f:
+        keys = json.load(f)
+
+    patch_name = [
+        'oof', # 0
+        board,
+        'RELEASE',
+        'lol', # 3
+        'patch'
+    ]
+
+    plist_data['Filename'] = ipsw
+    plist_data['Name'] = ipsw.split('_Restore.ipsw')[0]
+
+    bootchain = plist_data.get('FirmwarePatches')
+
+    ramdisk = bootchain.get('Restore Ramdisk')
+    ramdisk['File'] = keys.get('ramdisk')[0]
+    ramdisk['IV'] = keys.get('ramdisk')[1]
+    ramdisk['Key'] = keys.get('ramdisk')[2]
+
+    ibss = bootchain.get('iBSS')
+    ibss['File'] = keys.get('iBSS')[0]
+    ibss['IV'] = keys.get('iBSS')[1]
+    ibss['Key'] = keys.get('iBSS')[2]
+    ibss['Patch'] = f'{ibss.get("File")}.patch'
+
+    ibec = bootchain.get('iBEC')
+    ibec['File'] = keys.get('iBEC')[0]
+    ibec['IV'] = keys.get('iBEC')[1]
+    ibec['Key'] = keys.get('iBEC')[2]
+    ibec['Patch'] = f'{ibec.get("File")}.patch'
+
+    llb = bootchain.get('LLB')
+    llb['File'] = keys.get('LLB')[0]
+    llb['IV'] = keys.get('LLB')[1]
+    llb['Key'] = keys.get('LLB')[2]
+    llb['Patch'] = f'{llb.get("File")}.patch'
+
+    iboot = bootchain.get('iBoot')
+    iboot['File'] = keys.get('iBoot')[0]
+    iboot['IV'] = keys.get('iBoot')[1]
+    iboot['Key'] = keys.get('iBoot')[2]
+    iboot['Patch'] = f'{iboot.get("File")}.patch'
+
+    # Check if there are files that aren't encrypted
+    # If so, then if there's a "Not Encrypted" string
+    # we change it to None, or json's equivalent: null
+
+    for name in bootchain:
+        iv = bootchain.get(name)['IV']
+        k = bootchain.get(name)['Key']
+
+        thingy = 'Not Encrypted'
+
+        if iv == thingy or k == thingy:
+            bootchain[name]['IV'] = ''
+            bootchain[name]['Key'] = ''
+
+    plist_data['FirmwarePatches'] = bootchain
+
+    info_path = f'bundles/{bundle}/Info.plist'
+
+    with open(info_path, 'wb') as f:
+        plistlib.dump(plist_data, f)
 
 
 def clean():
@@ -305,14 +381,15 @@ def main():
         extractFiles(args.ipsw[0])
         data = readRestorePlist('.tmp/Restore.plist')
         writeJSON(data, 'Restore.json')
-        restore_info = getRestoreInfo('Restore.json')
-        createBundleFolder(restore_info[0])
-        getBootchainReady(restore_info[1])
+        bundle_name, ramdisk, board = getRestoreInfo('Restore.json')
+        createBundleFolder(bundle_name)
+        getBootchainReady(ramdisk)
         parseKeyTemplate(args.template[0])
         getKeys('Keys.json')
         decrypt('Keys.json')
-        patchRamdisk(restore_info[0])
-        patchiBoot(restore_info[0])
+        patchRamdisk(bundle_name)
+        patchiBoot(bundle_name)
+        initInfoPlist(bundle_name, args.ipsw[0], board)
     else:
         parser.print_help()
 
