@@ -84,6 +84,14 @@
         <true/>
         <key>RamdiskMountVolume</key>
         <string>ramdisk</string>
+	    <key>RootFilesystem</key>
+	    <string></string>
+	    <key>RootFilesystemSize</key>
+	    <integer>0</integer>
+	    <key>RootFilesystemKey</key>
+	    <string></string>
+	    <key>RootFilesystemMountVolume</key>
+	    <string></string>
         <key>SHA1</key>
         <string></string>
         <key>Filename</key>
