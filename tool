@@ -6,6 +6,7 @@ import shutil
 import subprocess
 from argparse import ArgumentParser
 from hashlib import sha1
+from hurry.filesize import size
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -132,6 +133,10 @@ def getKeys(path):
             data.get('iBoot'),
             data.get('iBootIV'),
             data.get('iBootKey')
+        ],
+        'RootFS': [
+            data.get('RootFS'),
+            data.get('RootFSKey')
         ]
     }
 
@@ -275,6 +280,36 @@ def patchiBoot(bundle):
         bsdiff4.file_diff(orig, pack[2], f'bundles/{bundle}/{orig}.patch')
 
 
+def getRootFSInfo():
+    with open('Keys.json') as f:
+        keys = json.load(f)
+
+    root_fs = f'.tmp/{keys.get("RootFS")[0]}.dmg'
+    root_fs_key = keys.get('RootFS')[1]
+
+    cmd = (
+        'bin/dmg',
+        'extract',
+        root_fs,
+        'rootfs.dmg',
+        f'-k {root_fs_key}'
+    )
+
+    subprocess.run(' '.join(cmd), shell=True)
+
+    root_fs_size = round(int(size(Path('rootfs.dmg').stat().st_size)[:-1]) / 10) * 10
+
+    p7z_cmd = subprocess.run(('7z', 'l', 'rootfs.dmg'), capture_output=True, universal_newlines=True)
+    p7z_out = p7z_cmd.stdout.splitlines()
+
+    for line in p7z_out:
+        if 'usr/' in line:
+            mount_name = line.split()[-1].split('/')[0]
+            break
+
+    return (root_fs.split('/')[1], mount_name, root_fs_size, root_fs_key)
+
+
 # FIXME
 # This function below is garbage and needs to be updated
 
@@ -360,6 +395,13 @@ def initInfoPlist(bundle, ipsw, board):
     plist_data['SHA1'] = ipsw_sha1
 
     info_path = f'bundles/{bundle}/Info.plist'
+
+    fs_info = getRootFSInfo()
+
+    plist_data['RootFilesystem'] = fs_info[0]
+    plist_data['RootFilesystemMountVolume'] = fs_info[1]
+    plist_data['RootFilesystemSize'] = fs_info[2]
+    plist_data['RootFilesystemKey'] = fs_info[3]
 
     with open(info_path, 'wb') as f:
         plistlib.dump(plist_data, f)

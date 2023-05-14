@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 bsdiff4 = "*"
+"hurry.filesize" = "*"
 
 [dev-packages]
 
