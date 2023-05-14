@@ -5,6 +5,7 @@ import plistlib
 import shutil
 import subprocess
 from argparse import ArgumentParser
+from hashlib import sha1
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -342,6 +343,11 @@ def initInfoPlist(bundle, ipsw, board):
             bootchain[name]['Key'] = ''
 
     plist_data['FirmwarePatches'] = bootchain
+
+    with open(ipsw, 'rb') as f:
+        ipsw_sha1 = sha1(f.read()).hexdigest()
+
+    plist_data['SHA1'] = ipsw_sha1
 
     info_path = f'bundles/{bundle}/Info.plist'
 

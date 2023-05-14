@@ -84,6 +84,8 @@
         <true/>
         <key>RamdiskMountVolume</key>
         <string>ramdisk</string>
+        <key>SHA1</key>
+        <string></string>
         <key>Filename</key>
         <string></string>
         <key>Name</key>
