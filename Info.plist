@@ -82,8 +82,6 @@
                 <string>asr.patch</string>
             </dict>
         </dict>
-        <key>DeleteBuildManifest</key>
-        <true/>
         <key>RamdiskMountVolume</key>
         <string>ramdisk</string>
 	    <key>RootFilesystem</key>
