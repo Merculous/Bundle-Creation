@@ -365,6 +365,10 @@ def clean():
             if thing.name.endswith(ext):
                 thing.unlink()
 
+    asr = Path('asr')
+    if asr.exists():
+        asr.unlink()
+
 
 def main():
     clean()
@@ -393,6 +397,7 @@ def main():
     else:
         parser.print_help()
 
+    clean()
 
 if __name__ == '__main__':
     main()
