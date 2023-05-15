@@ -252,7 +252,7 @@ def patchiBoot(bundle):
         ]
 
         if 'iBEC' in name or 'iBoot' in name:
-            cmd.append('-b -v')
+            cmd.append('-b -v debug=0x14e serial=3')
 
         cmds.append(cmd)
 
