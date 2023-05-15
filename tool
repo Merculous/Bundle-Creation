@@ -438,7 +438,6 @@ def main():
     parser = ArgumentParser()
 
     parser.add_argument('--ipsw', nargs=1)
-    parser.add_argument('--bundle', nargs=1)
     parser.add_argument('--template', nargs=1)
 
     args = parser.parse_args()
