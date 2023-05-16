@@ -22,13 +22,13 @@ compile xpwn: https://github.com/Merculous/xpwn
 	- to make compiling easy, use the `make package` command to make xpwn and create a bzip2 compressed tar  
 	- put the required binaries from xpwn mentioned above to wherever you want, I put mine in `/usr/local/bin`, although it doesn't matter where you put them, just make sure they're in the `bin` folder where this project was cloned
 
-compile iBoot32Patcher:
+compile iBoot32Patcher:  
 	- just a simple `make` is all you need to do, and then as I said above, copy/move/symlink to `bin`
 
-download asrpatch:
+download asrpatch:  
 	- put inside `bin`
 
-download 7zip
+download 7zip  
 	- Nothing else required here
 
 # getting keys
