@@ -32,8 +32,8 @@ download 7zip
 	- Nothing else required here
 
 # getting keys
-Go to https://theiphonewiki.com and get whatever keys you want, but DO NOT SKIP AHEAD OF ME
-	- When you're on the page with your keys, if you haven't already, download the ipsw, and then click the `view source` button, this is where the key template is stored which is used by my script
+Go to https://theiphonewiki.com and get whatever keys you want, but DO NOT SKIP AHEAD OF ME  
+	- When you're on the page with your keys, if you haven't already, download the ipsw, and then click the `view source` button, this is where the key template is stored which is used by my script  
 	- Copy everything in the middle starting with `{{keys` and ending with `}}`, then put this inside a file
 
 
