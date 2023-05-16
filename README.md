@@ -1,25 +1,25 @@
 # prerequisites
 
-asrpatch: https://github.com/cfw-project/asr_patcher-2
-dmg: xpwn
-hdutil: xpwn
-iBoot32Patcher: https://github.com/Merculous/iBoot32Patcher
-xpwntool: xpwn
+asrpatch: https://github.com/cfw-project/asr_patcher-2  
+dmg: xpwn  
+hdutil: xpwn  
+iBoot32Patcher: https://github.com/Merculous/iBoot32Patcher  
+xpwntool: xpwn  
 7zip: this is for getting the mount name for the rootfs
 
 Put the binaries or symlink inside a folder called 'bin' (it must be inside this projects folder)
 
-inside a virtual environment, I used `venv`, so I use `python3 -m venv venv`
-	- to enter the virtual environment, run `. venv/bin/activate`
-	- then run `pip install pipenv`
-	- then run `pipenv install`
+inside a virtual environment, I used `venv`, so I use `python3 -m venv venv`  
+	- to enter the virtual environment, run `. venv/bin/activate`  
+	- then run `pip install pipenv`  
+	- then run `pipenv install`  
 
 once you have installed the required libraries for python, move to the next setup below
 
 # setting up bin folder
-compile xpwn: https://github.com/Merculous/xpwn
-	- clone my fork as it contains a necessary compile flag to complie xpwn completely
-	- to make compiling easy, use the `make package` command to make xpwn and create a bzip2 compressed tar
+compile xpwn: https://github.com/Merculous/xpwn  
+	- clone my fork as it contains a necessary compile flag to complie xpwn completely  
+	- to make compiling easy, use the `make package` command to make xpwn and create a bzip2 compressed tar  
 	- put the required binaries from xpwn mentioned above to wherever you want, I put mine in `/usr/local/bin`, although it doesn't matter where you put them, just make sure they're in the `bin` folder where this project was cloned
 
 compile iBoot32Patcher:
