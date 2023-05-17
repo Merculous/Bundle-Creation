@@ -216,7 +216,7 @@ def patchRamdisk(bundle):
         'bin/hdutil',
         ramdisk,
         'cat',
-        '/usr/sbin/asr',
+        'usr/sbin/asr',
         '>',
         'asr'
     )
@@ -411,6 +411,96 @@ def initInfoPlist(bundle, ipsw, board):
         plistlib.dump(plist_data, f)
 
 
+def replaceAsr(bundle):
+    with open('Keys.json') as f:
+        keys = json.load(f)
+
+    ramdisk = Path(f'{keys.get("ramdisk")[0]}.dmg.decrypted')
+    ramdisk_size = ramdisk.stat().st_size
+    new_size = str(ramdisk_size + 250_000)
+
+    # We need to remove '.dmg' from the filename
+    # After testing everything I could think of, I came up
+    # with one more test, renaming the files. I had been
+    # copying the ramdisk to a new filename called 'ramdisk.copy'
+    # I soon realized that the name might have been what I was having
+    # trouble with, as the following line kept popping up
+
+    # error: /tmp/test/xpwn/hfs/rawfile.c:264: WRITE
+    # error: Bad file descriptor
+
+    # I did test until I had realized that having '.dmg' in the name
+    # made hdutil just refuse to work. So, apparently we MUST remove
+    # at least '.dmg' from the name to continue working with the ramdisk
+    # and hdutil. -________-
+
+    new_ramdisk_name = ramdisk.name.replace('.dmg', '')
+    shutil.copy(ramdisk.name, new_ramdisk_name)
+
+    grow = (
+        'bin/hdutil',
+        new_ramdisk_name,
+        'grow',
+        new_size
+    )
+
+    grow_cmd = subprocess.run(
+        ' '.join(grow), shell=True, capture_output=True, universal_newlines=True)
+
+    print(grow_cmd)
+
+    remove_asr = (
+        'bin/hdutil',
+        new_ramdisk_name,
+        'rm',
+        'usr/sbin/asr'
+    )
+
+    remove_asr_cmd = subprocess.run(
+        ' '.join(remove_asr), shell=True, capture_output=True, universal_newlines=True)
+
+    print(remove_asr_cmd)
+
+    asr_patch_path = f'{bundle}/asr.patch'
+
+    bsdiff4.file_patch('asr', 'asr.patched', asr_patch_path)
+
+    add_patched_asr = (
+        'bin/hdutil',
+        new_ramdisk_name,
+        'add',
+        'asr.patched',
+        'usr/sbin/asr'
+    )
+
+    add_patched_asr_cmd = subprocess.run(
+        ' '.join(add_patched_asr), shell=True, capture_output=True, universal_newlines=True)
+
+    print(add_patched_asr_cmd)
+
+    fix_asr_permissions = (
+        'bin/hdutil',
+        new_ramdisk_name,
+        'chmod',
+        '755',
+        'usr/sbin/asr'
+    )
+
+    fix_asr_permissions_cmd = subprocess.run(
+        ' '.join(fix_asr_permissions), shell=True, capture_output=True, universal_newlines=True)
+
+    print(fix_asr_permissions_cmd)
+
+    repack_ramdisk = (
+        'bin/xpwntool',
+        new_ramdisk_name,
+        f'{new_ramdisk_name}.packed',
+        f'-t {new_ramdisk_name.split(".")[0]}.dmg'
+    )
+
+    subprocess.run(' '.join(repack_ramdisk), shell=True)
+
+
 def clean():
     stuff = (
         '.dmg',
@@ -455,6 +545,7 @@ def main():
         patchRamdisk(bundle_name)
         patchiBoot(bundle_name)
         initInfoPlist(bundle_name, args.ipsw[0], board)
+        replaceAsr(f'bundles/{bundle_name}')
     else:
         parser.print_help()
 
