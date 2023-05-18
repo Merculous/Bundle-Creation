@@ -15,7 +15,7 @@ import bsdiff4
 
 def extractFiles(archive):
     try:
-        tmp_dir = Path('.tmp').mkdir()
+        Path('.tmp').mkdir()
     except Exception:
         pass
 
@@ -447,8 +447,6 @@ def replaceAsr(bundle):
     grow_cmd = subprocess.run(
         ' '.join(grow), shell=True, capture_output=True, universal_newlines=True)
 
-    print(grow_cmd)
-
     remove_asr = (
         'bin/hdutil',
         new_ramdisk_name,
@@ -458,8 +456,6 @@ def replaceAsr(bundle):
 
     remove_asr_cmd = subprocess.run(
         ' '.join(remove_asr), shell=True, capture_output=True, universal_newlines=True)
-
-    print(remove_asr_cmd)
 
     asr_patch_path = f'{bundle}/asr.patch'
 
@@ -476,8 +472,6 @@ def replaceAsr(bundle):
     add_patched_asr_cmd = subprocess.run(
         ' '.join(add_patched_asr), shell=True, capture_output=True, universal_newlines=True)
 
-    print(add_patched_asr_cmd)
-
     fix_asr_permissions = (
         'bin/hdutil',
         new_ramdisk_name,
@@ -489,8 +483,6 @@ def replaceAsr(bundle):
     fix_asr_permissions_cmd = subprocess.run(
         ' '.join(fix_asr_permissions), shell=True, capture_output=True, universal_newlines=True)
 
-    print(fix_asr_permissions_cmd)
-
     repack_ramdisk = (
         'bin/xpwntool',
         new_ramdisk_name,
@@ -499,6 +491,37 @@ def replaceAsr(bundle):
     )
 
     subprocess.run(' '.join(repack_ramdisk), shell=True)
+
+
+def makeIpsw(bundle):
+    with open(f'{bundle}/Info.plist', 'rb') as f:
+        data = plistlib.load(f)
+
+    packed = [p for p in Path().glob('*.packed')]
+
+    bootchain = data.get('FirmwarePatches')
+
+    for thing in bootchain:
+        path = bootchain.get(thing)['File']
+
+        for filename in packed:
+            prefix = filename.name.split('.')[0]
+            if prefix in path:
+                path = f'.tmp/{path}'
+                shutil.move(filename, path)
+
+    pack = (
+        'cd',
+        '.tmp',
+        '&&',
+        '7z',
+        'a',
+        '-tzip',
+        '../custom.ipsw',
+        '*'
+    )
+
+    subprocess.run(' '.join(pack), shell=True)
 
 
 def clean():
@@ -520,6 +543,11 @@ def clean():
     asr = Path('asr')
     if asr.exists():
         asr.unlink()
+
+    try:
+        shutil.rmtree('.tmp')
+    except Exception:
+        pass
 
 
 def main():
@@ -546,6 +574,7 @@ def main():
         patchiBoot(bundle_name)
         initInfoPlist(bundle_name, args.ipsw[0], board)
         replaceAsr(f'bundles/{bundle_name}')
+        makeIpsw(f'bundles/{bundle_name}')
     else:
         parser.print_help()
 
