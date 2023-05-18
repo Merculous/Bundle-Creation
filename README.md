@@ -45,3 +45,12 @@ Your bundle will be inside `bundles`, everything that you need to have a barebon
 
 # automatic ipsw creation
 As of commit 8eeb3a37e896f9d096a09b5441037451fa9f562e, custom ipsw's are now being made. The custom ipsw is inside the same folder, named `custom.ipsw`
+
+# restoring
+
+Use https://github.com/Merculous/idevicerestore with `-c` for restoring with a custom ipsw. I had removed the lines that try to use limera1n, though ipwndfu is much better at doing DFU stuff than idevicerestore
+
+
+# NOTES
+
+As of May 18 and commit 8d49469965108657f1321b5e0692fcddcda6e4dd, which is today as I'm making this, I now at least know that ASR gets killed, so I need to figure out what went wrong.
