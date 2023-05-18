@@ -7,7 +7,7 @@ iBoot32Patcher: https://github.com/Merculous/iBoot32Patcher
 xpwntool: xpwn  
 7zip: this is for getting the mount name for the rootfs
 
-Put the binaries or symlink inside a folder called 'bin' (it must be inside this projects folder)
+Put the binaries or symlink inside a folder called `bin` (it must be inside this projects folder)
 
 inside a virtual environment, I used `venv`, so I use `python3 -m venv venv`  
 	- to enter the virtual environment, run `. venv/bin/activate`  
@@ -44,4 +44,4 @@ All you need to do is run `./tool --ipsw "your ipsw here" --template "your file 
 Your bundle will be inside `bundles`, everything that you need to have a barebones custom ipsw will be inside the bundle corresponding to the ipsw you had provided
 
 # automatic ipsw creation
-Some reason xpwn makes ipsw's in a way that messes up booting, at least in my case, so I may have to add code in this project, or inside my other project pyXpwn that'll make use of this code to make a proper custom ipsw, but that'll be done soon, I'll have to make up my mind on how I want to do this
+As of commit 8eeb3a37e896f9d096a09b5441037451fa9f562e, custom ipsw's are now being made. The custom ipsw is inside the same folder, named `custom.ipsw`
