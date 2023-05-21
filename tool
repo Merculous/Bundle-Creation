@@ -251,8 +251,18 @@ def patchiBoot(bundle):
             '--rsa'
         ]
 
+        # Pre iOS 5, iBSS/LLB can actually use boot-args
+        # Maybe add some code to do just that?
+
         if 'iBEC' in name or 'iBoot' in name:
-            cmd.append('-b -v debug=0x14e serial=3')
+            boot_args = (
+                '-b',
+                '-v',
+                'debug=0x14e',
+                'serial=3'
+            )
+
+            cmd.extend(boot_args)
 
         cmds.append(cmd)
 
@@ -551,16 +561,16 @@ def clean():
 
 
 def main():
-    clean()
-
     parser = ArgumentParser()
 
+    parser.add_argument('--clean', action='store_true')
     parser.add_argument('--ipsw', nargs=1)
     parser.add_argument('--template', nargs=1)
 
     args = parser.parse_args()
 
     if args.ipsw and args.template:
+        clean()
         extractFiles(args.ipsw[0])
         data = readRestorePlist('.tmp/Restore.plist')
         writeJSON(data, 'Restore.json')
@@ -575,10 +585,12 @@ def main():
         initInfoPlist(bundle_name, args.ipsw[0], board)
         replaceAsr(f'bundles/{bundle_name}')
         makeIpsw(f'bundles/{bundle_name}')
+        clean()
+    elif args.clean:
+        clean()
     else:
         parser.print_help()
 
-    clean()
 
 if __name__ == '__main__':
     main()
