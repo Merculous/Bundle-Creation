@@ -255,16 +255,19 @@ def patchiBoot(bundle):
         # Maybe add some code to do just that?
 
         if 'iBEC' in name or 'iBoot' in name:
+            # rd=md0 nand-enable-reformat=1 -progress
             boot_args = (
+                '--debug',
                 '-b',
-                '-v',
-                'debug=0x14e',
-                'serial=3'
+                '"rd=md0 -v debug=0x14e serial=3 cs_enforcement_disable=1"'
             )
 
             cmd.extend(boot_args)
 
         cmds.append(cmd)
+
+        # OK, for some reason boot-args aren't being passed again
+        # Adding double quotes somehow make this work???
 
         # FIXME
         # Similar issue in decrypt()
@@ -580,10 +583,10 @@ def main():
         parseKeyTemplate(args.template[0])
         getKeys('Keys.json')
         decrypt('Keys.json')
-        patchRamdisk(bundle_name)
-        patchiBoot(bundle_name)
+        # patchRamdisk(bundle_name)
+        patchiBoot(bundle_name, version)
         initInfoPlist(bundle_name, args.ipsw[0], board)
-        replaceAsr(f'bundles/{bundle_name}')
+        # replaceAsr(f'bundles/{bundle_name}')
         makeIpsw(f'bundles/{bundle_name}')
         clean()
     elif args.clean:
