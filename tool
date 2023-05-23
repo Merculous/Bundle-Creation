@@ -6,11 +6,11 @@ import shutil
 import subprocess
 from argparse import ArgumentParser
 from hashlib import sha1
-from hurry.filesize import size
 from pathlib import Path
 from zipfile import ZipFile
 
 import bsdiff4
+from hurry.filesize import size
 
 
 def extractFiles(archive):
