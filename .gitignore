@@ -1,7 +1,10 @@
+
+.tmp
 venv
+bin
+
 *.ipsw
 *.img3
-.tmp
 *.dmg
 *.dfu
 *.decrypted
@@ -9,5 +12,5 @@ venv
 *.packed
 *.txt
 *.json
+
 asr
-bin
