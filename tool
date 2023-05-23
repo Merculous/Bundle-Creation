@@ -584,7 +584,7 @@ def main():
         getKeys('Keys.json')
         decrypt('Keys.json')
         # patchRamdisk(bundle_name)
-        patchiBoot(bundle_name, version)
+        patchiBoot(bundle_name)
         initInfoPlist(bundle_name, args.ipsw[0], board)
         # replaceAsr(f'bundles/{bundle_name}')
         makeIpsw(f'bundles/{bundle_name}')
