@@ -60,8 +60,14 @@ contain the patches needed to restore successfully. I will try to figure out wha
 needed in order to not get this error below.  
 
 
-entering update_iBoot
-write_image3_data: flashing LLB data (length = 0x241d0)
-AppleImage3NORAccess::_getSuperBlock imageVersion: 3
-0: RamrodErrorDomain/3e9: update_iBoot: error writing LLB image
+entering update_iBoot  
+write_image3_data: flashing LLB data (length = 0x241d0)  
+AppleImage3NORAccess::_getSuperBlock imageVersion: 3  
+0: RamrodErrorDomain/3e9: update_iBoot: error writing LLB image  
 1: NSMachErrorDomain/e00002e2: write_image3_data: AppleImage3NORAccess returned an error when writing image3 object
+
+# ipwndfu
+
+Use commit 0da9adbe2aa40a06769a450d9ae1d2383d2e8be0 (right before checkm8 addition)
+
+Some reason alloc8 is broken with the latest commit.
