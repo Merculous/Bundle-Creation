@@ -53,4 +53,15 @@ Use https://github.com/Merculous/idevicerestore with `-c` for restoring with a c
 
 # NOTES
 
-As of May 18 and commit 8d49469965108657f1321b5e0692fcddcda6e4dd, which is today as I'm making this, I now at least know that ASR gets killed, so I need to figure out what went wrong.
+As of May 18 and commit 8d49469965108657f1321b5e0692fcddcda6e4dd, which is today as I'm making this, I now at least know that ASR gets killed, so I need to figure out what went wrong.  
+
+The kernel MUST be patched, I'm not sure exactly what patches are needed but sn0wbreeze kernels  
+contain the patches needed to restore successfully. I will try to figure out what patches are  
+needed in order to not get this error below.  
+
+
+entering update_iBoot
+write_image3_data: flashing LLB data (length = 0x241d0)
+AppleImage3NORAccess::_getSuperBlock imageVersion: 3
+0: RamrodErrorDomain/3e9: update_iBoot: error writing LLB image
+1: NSMachErrorDomain/e00002e2: write_image3_data: AppleImage3NORAccess returned an error when writing image3 object
