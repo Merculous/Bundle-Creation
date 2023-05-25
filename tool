@@ -285,12 +285,15 @@ def patchiBoot(bundle):
         patch_name[-1] = 'patch'
         patch_name = '.'.join(patch_name)
 
-        pack = (
+        pack = [
             'bin/xpwntool',
             new,
             f'{new}.packed',
             f'-t {orig}'
-        )
+        ]
+
+        if 'LLB' in new:
+            pack.append('-xn8824k')
 
         subprocess.run(' '.join(pack), shell=True)
 
