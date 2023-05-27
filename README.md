@@ -31,14 +31,11 @@ download asrpatch:
 download 7zip  
 	- Nothing else required here
 
-# getting keys
-Go to https://theiphonewiki.com and get whatever keys you want, but DO NOT SKIP AHEAD OF ME  
-	- When you're on the page with your keys, if you haven't already, download the ipsw, and then click the `view source` button, this is where the key template is stored which is used by my script  
-	- Copy everything in the middle starting with `{{keys` and ending with `}}`, then put this inside a file
-
-
 # creating bundles
-All you need to do is run `./tool --ipsw "your ipsw here" --template "your file with the keys"`
+Before running: Make sure your device is connected to the internet  
+this is to get the keys for your specified ipsw
+
+All you need to do is run `./tool --ipsw "your ipsw here"`
 
 # after bundle creation
 Your bundle will be inside `bundles`, everything that you need to have a barebones custom ipsw will be inside the bundle corresponding to the ipsw you had provided

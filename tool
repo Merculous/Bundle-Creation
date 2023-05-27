@@ -7,6 +7,8 @@ import subprocess
 from argparse import ArgumentParser
 from hashlib import sha1
 from pathlib import Path
+from urllib.error import HTTPError
+from urllib.request import urlopen
 from zipfile import ZipFile
 
 import bsdiff4
@@ -22,7 +24,19 @@ def extractFiles(archive):
     with ZipFile(archive) as f:
         f.extractall('.tmp')
 
+
+def getCodename():
+    with open('.tmp/BuildManifest.plist', 'rb') as f:
+        data = plistlib.load(f)
+
+    stuff = data.get('BuildIdentities')[0]
+    info = stuff.get('Info')
+    codename = info.get('BuildTrain')
+
+    # For iTunes users (gets rid of meaningless popup)
     Path('.tmp/BuildManifest.plist').unlink()
+
+    return codename
 
 
 def readRestorePlist(path):
@@ -40,18 +54,29 @@ def getRestoreInfo(path):
     with open(path) as f:
         data = json.load(f)
 
-    device = data.get('ProductType')
-    board = data.get('DeviceMap')[0]['BoardConfig']
-    version = data.get('ProductVersion')
-    buildid = data.get('ProductBuildVersion')
     platform = data.get('DeviceMap')[0]['Platform']
-    ramdisk = data.get('RamDisksByPlatform')[platform]['User']
 
-    bundle_name = f'{device}_{board}_{version}_{buildid}.bundle'
+    info = {
+        'device': data.get('ProductType'),
+        'board': data.get('DeviceMap')[0]['BoardConfig'],
+        'version': data.get('ProductVersion'),
+        'buildid': data.get('ProductBuildVersion'),
+        'platform': platform,
+        'ramdisk': data.get('RamDisksByPlatform')[platform]['User']
+    }
+
+    things = (
+        info.get('device'),
+        info.get('board'),
+        info.get('version'),
+        info.get('buildid')
+    )
+
+    bundle_name = f'{things[0]}_{things[1]}_{things[2]}_{things[3]}.bundle'
 
     Path('Restore.json').unlink()
 
-    return (bundle_name, ramdisk, board)
+    return (bundle_name, info)
 
 
 def getBootchainReady(ramdisk):
@@ -76,11 +101,33 @@ def getBootchainReady(ramdisk):
         shutil.copy(path, '.')
 
 
-def parseKeyTemplate(path):
-    with open(path) as f:
-        data = f.readlines()
+def readFromURL(url, mode, use_json):
+    try:
+        r = urlopen(url)
+    except HTTPError:
+        print(f'Got error from url: {url}')
+    else:
+        data = r.read()
 
-    data = [x.strip() for x in data]
+        if mode == 's':
+            data = data.decode('utf-8')
+
+            if use_json:
+                return json.loads(data)
+            else:
+                return data
+
+        elif mode == 'b':
+            return data
+
+        else:
+            raise Exception(f'Got mode: {mode}')
+
+
+def parseKeyTemplate(template):
+    template = template.splitlines()
+
+    data = [x.strip() for x in template]
 
     info = {
         'start': data[0],
@@ -102,8 +149,12 @@ def parseKeyTemplate(path):
     writeJSON(info, 'Keys.json')
 
 
-def getKeys(path):
-    with open(path) as f:
+def getKeys(codename, buildid, device):
+    url = f'https://www.theiphonewiki.com/w/index.php?title={codename}_{buildid}_({device})&action=raw'
+    template = readFromURL(url, 's', False)
+    parseKeyTemplate(template)
+
+    with open('Keys.json') as f:
         data = json.load(f)
 
     data = data.get('data')
@@ -137,6 +188,11 @@ def getKeys(path):
         'RootFS': [
             data.get('RootFS'),
             data.get('RootFSKey')
+        ],
+        'Kernelcache': [
+            data.get('Kernelcache'),
+            data.get('KernelcacheIV'),
+            data.get('KernelcacheKey')
         ]
     }
 
@@ -197,12 +253,11 @@ def decrypt(keys_path):
 
 
 def createBundleFolder(name):
-    name = Path(f'bundles/{name}')
-
     try:
-        name.mkdir()
+        Path('bundles').mkdir()
+        Path(f'bundles/{name}').mkdir()
     except Exception:
-        print(f'{name} already exists!')
+        pass
 
 
 def patchRamdisk(bundle):
@@ -317,9 +372,11 @@ def getRootFSInfo():
 
     subprocess.run(' '.join(cmd), shell=True)
 
-    root_fs_size = round(int(size(Path('rootfs.dmg').stat().st_size)[:-1]) / 10) * 10
+    root_fs_size = round(
+        int(size(Path('rootfs.dmg').stat().st_size)[:-1]) / 10) * 10
 
-    p7z_cmd = subprocess.run(('7z', 'l', 'rootfs.dmg'), capture_output=True, universal_newlines=True)
+    p7z_cmd = subprocess.run(('7z', 'l', 'rootfs.dmg'),
+                             capture_output=True, universal_newlines=True)
     p7z_out = p7z_cmd.stdout.splitlines()
 
     for line in p7z_out:
@@ -340,14 +397,6 @@ def initInfoPlist(bundle, ipsw, board):
 
     with open('Keys.json') as f:
         keys = json.load(f)
-
-    patch_name = [
-        'oof', # 0
-        board,
-        'RELEASE',
-        'lol', # 3
-        'patch'
-    ]
 
     dfu_path = 'Firmware/dfu'
     other_path = f'Firmware/all_flash/all_flash.{board}.production'
@@ -460,7 +509,7 @@ def replaceAsr(bundle):
         new_size
     )
 
-    grow_cmd = subprocess.run(
+    subprocess.run(
         ' '.join(grow), shell=True, capture_output=True, universal_newlines=True)
 
     remove_asr = (
@@ -470,7 +519,7 @@ def replaceAsr(bundle):
         'usr/sbin/asr'
     )
 
-    remove_asr_cmd = subprocess.run(
+    subprocess.run(
         ' '.join(remove_asr), shell=True, capture_output=True, universal_newlines=True)
 
     asr_patch_path = f'{bundle}/asr.patch'
@@ -485,7 +534,7 @@ def replaceAsr(bundle):
         'usr/sbin/asr'
     )
 
-    add_patched_asr_cmd = subprocess.run(
+    subprocess.run(
         ' '.join(add_patched_asr), shell=True, capture_output=True, universal_newlines=True)
 
     fix_asr_permissions = (
@@ -496,7 +545,7 @@ def replaceAsr(bundle):
         'usr/sbin/asr'
     )
 
-    fix_asr_permissions_cmd = subprocess.run(
+    subprocess.run(
         ' '.join(fix_asr_permissions), shell=True, capture_output=True, universal_newlines=True)
 
     repack_ramdisk = (
@@ -571,24 +620,23 @@ def main():
 
     parser.add_argument('--clean', action='store_true')
     parser.add_argument('--ipsw', nargs=1)
-    parser.add_argument('--template', nargs=1)
 
     args = parser.parse_args()
 
-    if args.ipsw and args.template:
+    if args.ipsw:
         clean()
         extractFiles(args.ipsw[0])
+        codename = getCodename()
         data = readRestorePlist('.tmp/Restore.plist')
         writeJSON(data, 'Restore.json')
-        bundle_name, ramdisk, board = getRestoreInfo('Restore.json')
+        bundle_name, info = getRestoreInfo('Restore.json')
         createBundleFolder(bundle_name)
-        getBootchainReady(ramdisk)
-        parseKeyTemplate(args.template[0])
-        getKeys('Keys.json')
+        getBootchainReady(info.get('ramdisk'))
+        getKeys(codename, info.get('buildid'), info.get('device'))
         decrypt('Keys.json')
         # patchRamdisk(bundle_name)
         patchiBoot(bundle_name)
-        initInfoPlist(bundle_name, args.ipsw[0], board)
+        initInfoPlist(bundle_name, args.ipsw[0], info.get('board'))
         # replaceAsr(f'bundles/{bundle_name}')
         makeIpsw(f'bundles/{bundle_name}')
         clean()

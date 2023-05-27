@@ -2,6 +2,7 @@
 .tmp
 venv
 bin
+bundles
 
 *.ipsw
 *.img3
