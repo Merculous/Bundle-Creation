@@ -1,5 +1,7 @@
 
 .tmp
+.vscode
+
 venv
 bin
 bundles
@@ -12,6 +14,7 @@ bundles
 *.patched
 *.packed
 *.txt
-*.json
+
+./*.json
 
 asr

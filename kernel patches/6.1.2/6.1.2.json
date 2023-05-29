@@ -1,0 +1,36 @@
+{
+    "patches": [
+        {
+            "patternBytes": "00 21 10 90 00 f0 06 00 06 28 01 d0 19 91 10 e0 08",
+            "patchBytes": "ff",
+            "patchOffset": "8",
+            "secondMatchCorrelation": "0.641398370265960693359",
+            "adjustedSecondMatchCorrelation": "0.573997254494632014321",
+            "comment": "Original offset: 4ec00"
+        },
+        {
+            "patternBytes": "91 ba f1 00 0f 01 91 06 d1 02 a8 41 46 04 22 6b f6",
+            "patchBytes": "e0",
+            "patchOffset": "8",
+            "secondMatchCorrelation": "0.727037787437438964844",
+            "adjustedSecondMatchCorrelation": "0.671345727868875807864",
+            "comment": "Original offset: 21b1b7"
+        },
+        {
+            "patternBytes": "e2 24 00 28 ce f2 00 04 40 f0 0e 81 04 98 00 f0 6c fa 40 f2",
+            "patchBytes": "00 20 00 20",
+            "patchOffset": "8",
+            "secondMatchCorrelation": "0.777453958988189697266",
+            "adjustedSecondMatchCorrelation": "0.730034440801862527515",
+            "comment": "Original offset: a992d2"
+        },
+        {
+            "patternBytes": "e2 24 00 28 ce f2 00 04 40 f0 04 81 31 46 40 f2 e2 24 11 f8",
+            "patchBytes": "00 20 00 20",
+            "patchOffset": "8",
+            "secondMatchCorrelation": "0.694691479206085205078",
+            "adjustedSecondMatchCorrelation": "0.634220046359520783774",
+            "comment": "Original offset: a992e6"
+        }
+    ]
+}
