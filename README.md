@@ -30,7 +30,10 @@ download asrpatch:
 	- put inside `bin`
 
 download 7zip  
-	- Nothing else required here
+	- Nothing else required here  
+
+compile fuzzy_patcher: https://github.com/Merculous/ios-jb-tools  
+	- run `make` inside `tools_src/fuzzy_patcher`
 
 # creating bundles
 Before running: Make sure your device is connected to the internet  
