@@ -5,7 +5,8 @@ dmg: xpwn
 hdutil: xpwn  
 iBoot32Patcher: https://github.com/Merculous/iBoot32Patcher  
 xpwntool: xpwn  
-7zip: this is for getting the mount name for the rootfs
+7zip: this is for getting the mount name for the rootfs  
+fuzzy_patcher: https://github.com/Merculous/ios-jb-tools
 
 Put the binaries or symlink inside a folder called `bin` (it must be inside this projects folder)
 
