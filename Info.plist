@@ -4,8 +4,21 @@
     <dict>
         <key>FilesystemPatches</key>
         <dict/>
-        <key>FirmwarePatches</key>
-        <dict>
+            <key>FirmwarePatches</key>
+            <dict>
+            <key>KernelCache</key>
+            <dict>
+                <key>File</key>
+                <string></string>
+                <key>IV</key>
+                <string></string>
+                <key>Key</key>
+                <string></string>
+                <key>Patch</key>
+                <string></string>
+                <key>TypeFlag</key>
+                <integer>4</integer>
+            </dict>
             <key>Restore Ramdisk</key>
             <dict>
                 <key>File</key>
