@@ -12,7 +12,6 @@ from urllib.request import urlopen
 from zipfile import ZipFile
 
 import bsdiff4
-from hurry.filesize import size
 
 
 def runCommand(args, use_shell=False):
@@ -432,12 +431,7 @@ def getRootFSInfo():
 
     runCommand(' '.join(cmd), True)
 
-    # Below is bad, it's giving me 0 even though the size is ~1G
-    # FIXME
-    # iirc, xpwn has code that'll use a default size
-
-    root_fs_size = round(
-        int(size(Path('rootfs.dmg').stat().st_size)[:-1]) / 10) * 10
+    root_fs_size = round(Path('rootfs.dmg').stat().st_size / (1024 * 1024))
 
     p7z_cmd = runCommand(('7z', 'l', 'rootfs.dmg'))
     p7z_out = p7z_cmd[0].splitlines()
