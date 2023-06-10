@@ -15,6 +15,17 @@ import bsdiff4
 from hurry.filesize import size
 
 
+def runCommand(args, use_shell=False):
+    if use_shell:
+        cmd = subprocess.run(
+            args, capture_output=True, universal_newlines=True, shell=True)
+    else:
+        cmd = subprocess.run(
+            args, capture_output=True, universal_newlines=True)
+
+    return (cmd.stdout, cmd.stderr)
+
+
 def extractFiles(archive):
     try:
         Path('.tmp').mkdir()
@@ -87,7 +98,8 @@ def getBootchainReady(ramdisk):
         'iBEC',
         'LLB',
         'iBoot',
-        ramdisk
+        ramdisk,
+        'kernelcache'
     )
 
     needed_paths = []
@@ -189,7 +201,7 @@ def getKeys(codename, buildid, device):
             data.get('RootFS'),
             data.get('RootFSKey')
         ],
-        'Kernelcache': [
+        'kernelcache': [
             data.get('Kernelcache'),
             data.get('KernelcacheIV'),
             data.get('KernelcacheKey')
@@ -210,6 +222,9 @@ def decrypt(keys_path):
         for ext in exts:
             if ext in path.name:
                 paths.append(path)
+
+        if path.name.startswith('kernelcache'):
+            paths.append(path)
 
     info = {}
 
@@ -249,12 +264,16 @@ def decrypt(keys_path):
     for cmd in cmds:
         # FIXME
         # Weird, this only works if ran inside a shell
-        subprocess.run(' '.join(cmd), shell=True)
+        runCommand(' '.join(cmd), True)
 
 
 def createBundleFolder(name):
     try:
         Path('bundles').mkdir()
+    except Exception:
+        pass
+
+    try:
         Path(f'bundles/{name}').mkdir()
     except Exception:
         pass
@@ -276,7 +295,7 @@ def patchRamdisk(bundle):
         'asr'
     )
 
-    subprocess.run(' '.join(extract_asr), shell=True)
+    runCommand(' '.join(extract_asr), True)
 
     create_patch = (
         'bin/asrpatch',
@@ -284,7 +303,7 @@ def patchRamdisk(bundle):
         f'bundles/{bundle}/asr.patch'
     )
 
-    subprocess.run(create_patch)
+    runCommand(create_patch)
 
 
 def patchiBoot(bundle):
@@ -309,15 +328,23 @@ def patchiBoot(bundle):
         # Pre iOS 5, iBSS/LLB can actually use boot-args
         # Maybe add some code to do just that?
 
-        if 'iBEC' in name or 'iBoot' in name:
-            # rd=md0 nand-enable-reformat=1 -progress
-            boot_args = (
-                '--debug',
-                '-b',
-                '"rd=md0 -v debug=0x14e serial=3 cs_enforcement_disable=1"'
-            )
+        ibec_args = (
+            '--debug',
+            '-b',
+            '"rd=md0 -v debug=0x14e serial=3 cs_enforcement_disable=1"'
+        )
 
-            cmd.extend(boot_args)
+        iboot_args = (
+            '--debug',
+            '-b',
+            '"-v debug=0x14e serial=3 cs_enforcement_disable=1"'
+        )
+
+        if 'iBEC' in name:
+            cmd.extend(ibec_args)
+
+        if 'iBoot' in name:
+            cmd.extend(iboot_args)
 
         cmds.append(cmd)
 
@@ -331,7 +358,7 @@ def patchiBoot(bundle):
         # to the 'binary', thus needing to run cmd as a shell command
         # if I don't run the command as a shell command, the '-b -v'
         # arg was never passed, thus only the '--rsa' is passed
-        subprocess.run(' '.join(cmd), shell=True)
+        runCommand(' '.join(cmd), True)
 
         orig = name.split('.decrypted')[0]
         new = cmd[2]
@@ -350,9 +377,42 @@ def patchiBoot(bundle):
         if 'LLB' in new:
             pack.append('-xn8824k')
 
-        subprocess.run(' '.join(pack), shell=True)
+        runCommand(' '.join(pack), True)
 
         bsdiff4.file_diff(orig, pack[2], f'bundles/{bundle}/{patch_name}')
+
+
+def patchKernel(bundle, version):
+    name = None
+    for path in Path().glob('*.decrypted'):
+        if path.name.startswith('kernelcache'):
+            name = path.name
+            break
+
+    patch_kernel = (
+        'bin/fuzzy_patcher',
+        '--patch',
+        f'--delta kernel\\ patches/{version}/{version}.json',
+        f'--orig {name}',
+        f'--patched {name}.patched'
+    )
+
+    runCommand(' '.join(patch_kernel), True)
+
+    packed = f'{name}.patched.packed'
+
+    pack = (
+        'bin/xpwntool',
+        f'{name}.patched',
+        packed,
+        f'-t {name.replace(".decrypted", "")}'
+    )
+
+    runCommand(' '.join(pack), True)
+
+    original = name.replace('.decrypted', '')
+
+    bsdiff4.file_diff(name, packed, f'bundles/{bundle}/{original}.patch')
 
 
 def getRootFSInfo():
@@ -370,14 +430,13 @@ def getRootFSInfo():
         f'-k {root_fs_key}'
     )
 
-    subprocess.run(' '.join(cmd), shell=True)
+    runCommand(' '.join(cmd), True)
 
     root_fs_size = round(
         int(size(Path('rootfs.dmg').stat().st_size)[:-1]) / 10) * 10
 
-    p7z_cmd = subprocess.run(('7z', 'l', 'rootfs.dmg'),
-                             capture_output=True, universal_newlines=True)
-    p7z_out = p7z_cmd.stdout.splitlines()
+    p7z_cmd = runCommand(('7z', 'l', 'rootfs.dmg'))
+    p7z_out = p7z_cmd[0].splitlines()
 
     for line in p7z_out:
         if 'usr/' in line:
@@ -412,6 +471,12 @@ def initInfoPlist(bundle, ipsw, board):
     plist_data['Name'] = ipsw.split('_Restore.ipsw')[0]
 
     bootchain = plist_data.get('FirmwarePatches')
+
+    kernel = bootchain.get('KernelCache')
+    kernel['File'] = keys.get('kernelcache')[0]
+    kernel['IV'] = keys.get('kernelcache')[1]
+    kernel['Key'] = keys.get('kernelcache')[2]
+    kernel['Patch'] = f'{keys.get("kernelcache")[0]}.patch'
 
     ramdisk = bootchain.get('Restore Ramdisk')
     ramdisk['File'] = f'{keys.get("ramdisk")[0]}.dmg'
@@ -509,8 +574,7 @@ def replaceAsr(bundle):
         new_size
     )
 
-    subprocess.run(
-        ' '.join(grow), shell=True, capture_output=True, universal_newlines=True)
+    runCommand(' '.join(grow), True)
 
     remove_asr = (
         'bin/hdutil',
@@ -519,8 +583,7 @@ def replaceAsr(bundle):
         'usr/sbin/asr'
     )
 
-    subprocess.run(
-        ' '.join(remove_asr), shell=True, capture_output=True, universal_newlines=True)
+    runCommand(' '.join(remove_asr), True)
 
     asr_patch_path = f'{bundle}/asr.patch'
 
@@ -534,8 +597,7 @@ def replaceAsr(bundle):
         'usr/sbin/asr'
     )
 
-    subprocess.run(
-        ' '.join(add_patched_asr), shell=True, capture_output=True, universal_newlines=True)
+    runCommand(' '.join(add_patched_asr), True)
 
     fix_asr_permissions = (
         'bin/hdutil',
@@ -545,8 +607,7 @@ def replaceAsr(bundle):
         'usr/sbin/asr'
     )
 
-    subprocess.run(
-        ' '.join(fix_asr_permissions), shell=True, capture_output=True, universal_newlines=True)
+    runCommand(' '.join(fix_asr_permissions), True)
 
     repack_ramdisk = (
         'bin/xpwntool',
@@ -555,7 +616,7 @@ def replaceAsr(bundle):
         f'-t {new_ramdisk_name.split(".")[0]}.dmg'
     )
 
-    subprocess.run(' '.join(repack_ramdisk), shell=True)
+    runCommand(' '.join(repack_ramdisk), True)
 
 
 def makeIpsw(bundle):
@@ -586,7 +647,7 @@ def makeIpsw(bundle):
         '*'
     )
 
-    subprocess.run(' '.join(pack), shell=True)
+    runCommand(' '.join(pack), True)
 
 
 def clean():
@@ -604,6 +665,12 @@ def clean():
         for ext in stuff:
             if thing.name.endswith(ext):
                 thing.unlink()
+
+        if thing.name.startswith('kernelcache'):
+            try:
+                thing.unlink()
+            except Exception:
+                pass
 
     asr = Path('asr')
     if asr.exists():
@@ -636,9 +703,10 @@ def main():
         decrypt('Keys.json')
         # patchRamdisk(bundle_name)
         patchiBoot(bundle_name)
+        patchKernel(bundle_name, info.get('version'))
         initInfoPlist(bundle_name, args.ipsw[0], info.get('board'))
         # replaceAsr(f'bundles/{bundle_name}')
-        makeIpsw(f'bundles/{bundle_name}')
+        # makeIpsw(f'bundles/{bundle_name}')
         clean()
     elif args.clean:
         clean()

@@ -14,7 +14,8 @@ bundles
 *.patched
 *.packed
 *.txt
+kernelcache.*
 
-./*.json
+Keys.json
 
 asr
