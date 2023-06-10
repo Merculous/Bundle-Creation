@@ -704,7 +704,7 @@ def main():
         patchKernel(bundle_name, info.get('version'))
         initInfoPlist(bundle_name, args.ipsw[0], info.get('board'))
         # replaceAsr(f'bundles/{bundle_name}')
-        # makeIpsw(f'bundles/{bundle_name}')
+        makeIpsw(f'bundles/{bundle_name}')
         clean()
     elif args.clean:
         clean()
