@@ -50,3 +50,20 @@ def clean():
         removeFile(asr)
 
     removeDirectory('.tmp')
+
+
+def selectFromList(choices):
+    choices_len = len(choices)
+    possible_indicies = list(range(choices_len))
+
+    for i, choice in enumerate(choices):
+        print(i, choice)
+
+    selected = int(input('Select the index of the value you choose.\n'))
+
+    if selected not in possible_indicies:
+        raise IndexError(f'Invaild index: {selected}')
+
+    print(f'Selected: {choices[selected]}')
+
+    return choices[selected]

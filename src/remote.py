@@ -32,3 +32,8 @@ def readFromURL(url, mode, use_json):
 def downloadFile(url, path):
     data = readFromURL(url, 'b', False)
     writeBinaryFile(data, path)
+
+
+def readJSONFromURL(url):
+    data = readFromURL(url, 's', True)
+    return data
