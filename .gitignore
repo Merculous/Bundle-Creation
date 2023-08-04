@@ -2,6 +2,8 @@
 .tmp
 .vscode
 
+__pycache__
+
 venv
 bin
 bundles
@@ -14,6 +16,8 @@ bundles
 *.patched
 *.packed
 *.txt
+*.pyc
+
 kernelcache.*
 
 Keys.json
