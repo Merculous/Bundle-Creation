@@ -24,7 +24,7 @@ def go(ipsw):
     getKeys(codename, info.get('buildid'), info.get('device'))
     decrypt()
     # patchRamdisk(bundle_name)
-    patchiBoot(bundle_name)
+    patchiBoot(bundle_name, info.get('version'))
     patchKernel(bundle_name, info.get('version'))
     initInfoPlist(bundle_name, ipsw, info.get('board'))
     # replaceAsr(f'bundles/{bundle_name}')
