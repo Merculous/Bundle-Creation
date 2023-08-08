@@ -1,9 +1,13 @@
 
-from .command import runFuzzyPatcher
 from .diff import createBSDiffPatchFile
+from .patch import patchFileWithFuzzyPatcher
 from .utils import listDir
 from .xpwntool import packFile
 
+
+# FIXME
+# Apparently all kernel patching is messed up.
+# Figure out what's going wrong.
 
 def patchKernel(bundle, version):
     name = None
@@ -12,14 +16,9 @@ def patchKernel(bundle, version):
             name = path.name
             break
 
-    patch_kernel = (
-        '--patch',
-        f'--delta kernel\\ patches/{version}/{version}.json',
-        f'--orig {name}',
-        f'--patched {name}.patched'
-    )
+    patch_path = f'kernel\\ patches/{version}/{version}.json'
 
-    runFuzzyPatcher(patch_kernel)
+    patchFileWithFuzzyPatcher(name, f'{name}.patched', patch_path)
 
     packed = f'{name}.patched.packed'
 
