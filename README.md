@@ -67,6 +67,13 @@ AppleImage3NORAccess::_getSuperBlock imageVersion: 3
 0: RamrodErrorDomain/3e9: update_iBoot: error writing LLB image  
 1: NSMachErrorDomain/e00002e2: write_image3_data: AppleImage3NORAccess returned an error when writing image3 object
 
+Below seems to be an iOS 6+ issue
+
+entering ramrod_ticket_update
+failed to update ticket: 8
+0: RamrodErrorDomain/8: ramrod_ticket_update: no ticket available
+unable to convert ramrod error 8
+
 # ipwndfu
 
 Use commit 0da9adbe2aa40a06769a450d9ae1d2383d2e8be0 (right before checkm8 addition)
@@ -94,3 +101,11 @@ MuscleNerd https://twitter.com/MuscleNerd
 
 And everyone else who's contributed information about doing this kind of work. You all
 are amazing people. If you know if contributed in making this work public, thank you!
+
+# Tested
+
+iPhone2,1
+	- 5.1.1
+	- 4.3.3 security check for partition /dev/disk0 failed: 8
+	- 4.3.2 same thing as above
+	- 6.0.1 error shown in NOTES section
