@@ -105,7 +105,11 @@ are amazing people. If you know if contributed in making this work public, thank
 # Tested
 
 iPhone2,1
-	- 5.1.1
-	- 4.3.3 security check for partition /dev/disk0 failed: 8
-	- 4.3.2 same thing as above
-	- 6.0.1 error shown in NOTES section
+
+	- 5.1.1: working
+
+	- 4.3.3: security check for partition /dev/disk0 failed: 8
+
+	- 4.3.2: same thing as above
+
+	- 6.0.1: error shown in NOTES section
