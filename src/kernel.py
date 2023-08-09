@@ -4,10 +4,12 @@ from .patch import patchFileWithFuzzyPatcher
 from .utils import listDir
 from .xpwntool import packFile
 
-
 # FIXME
 # Apparently all kernel patching is messed up.
 # Figure out what's going wrong.
+
+# Yup, kernel patching is 100% not working.
+
 
 def patchKernel(bundle, version):
     name = [n.name for n in listDir('kernelcache*.decrypted')][0]
@@ -24,4 +26,6 @@ def patchKernel(bundle, version):
 
     original = name.replace('.decrypted', '')
 
-    createBSDiffPatchFile(name, packed, f'bundles/{bundle}/{original}.patch')
+    bspatch_path = f'bundles/{bundle}/{original}.patch'
+
+    createBSDiffPatchFile(original, packed, bspatch_path)

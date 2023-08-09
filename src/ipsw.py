@@ -4,7 +4,7 @@ from zipfile import ZipFile
 from .command import runShellCommand
 from .file import moveFileToPath, removeFile
 from .plist import readPlist
-from .utils import makeDirs, listDir
+from .utils import listDir, makeDirs
 
 
 def extractFiles(archive):
@@ -21,14 +21,18 @@ def makeIpsw(bundle):
 
     bootchain = data.get('FirmwarePatches')
 
+    # TODO
+    # I think I can clean up the loop below
+
     for thing in bootchain:
         path = bootchain.get(thing)['File']
 
         for filename in packed:
             prefix = filename.name.split('.')[0]
+
             if prefix in path:
-                path = f'.tmp/{path}'
-                moveFileToPath(filename, path)
+                tmp_path = f'.tmp/{path}'
+                moveFileToPath(filename, tmp_path)
 
     # For iTunes users (gets rid of meaningless popup)
     removeFile('.tmp/BuildManifest.plist')
