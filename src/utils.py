@@ -4,6 +4,23 @@ import shutil
 from pathlib import Path
 
 from .file import removeFile
+from .json import readJSON
+
+
+def binCheck():
+    tools = readJSON('tools.json')
+
+    for tool in tools:
+        if tools[tool]['required']:
+            path_exists = Path(f'bin/{tool}').exists()
+
+            if path_exists:
+                tools[tool]['exists'] = True
+
+    for tool in tools:
+        if tools[tool]['required']:
+            if not tools[tool]['exists']:
+                raise FileNotFoundError(f'{tool} is missing!')
 
 
 def makeDirs(path):
@@ -31,11 +48,12 @@ def clean():
         '.decrypted',
         '.dfu',
         '.img3',
-        '.json',
         '.patched',
         '.packed',
         'kernelcache',
-        'asr'
+        'asr',
+        'Restore',
+        'Keys'
     )
 
     tmp = []

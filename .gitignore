@@ -21,5 +21,6 @@ bundles
 kernelcache.*
 
 Keys.json
+Restore.json
 
 asr

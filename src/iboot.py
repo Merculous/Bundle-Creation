@@ -5,7 +5,6 @@ from .file import copyFileToPath
 from .utils import listDir
 from .xpwntool import packFile
 
-
 # TODO
 # iBSS can load boot-args and such. Basically skipping over iBEC
 # completely. So custom args are I suspect, ignored. Also, apparently,
@@ -60,7 +59,7 @@ def patchiBoot(bundle, version):
             if 'iBEC' in name:
                 cmd.extend(restore_args)
 
-            elif 'iBoot' in name:
+            if 'iBoot' in name:
                 cmd.extend(boot_args)
 
         else:
@@ -92,7 +91,7 @@ def patchiBoot(bundle, version):
         if 'LLB' in new:
             pwn_llb = True
 
-        packFile(new, orig, pwn_llb)
+        packFile(new, new_packed, orig, pwn_llb=pwn_llb)
 
         patch_path = f'bundles/{bundle}/{patch_name}'
 

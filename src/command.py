@@ -1,6 +1,10 @@
 
 import subprocess
 
+# TODO
+# Get rid of shell. I do use it for asr bit, but I should
+# be able to get rid of shell usage completely.
+
 
 def runCommand(args):
     cmd = subprocess.run(
@@ -67,3 +71,8 @@ def runiBoot32Patcher(args):
 def runFuzzyPatcher(args):
     cmd = ('bin/fuzzy_patcher', *args)
     return runShellCommand(cmd)
+
+
+def run7zip(args):
+    cmd = ('bin/7z', *args)
+    return runCommand(cmd)

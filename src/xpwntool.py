@@ -4,7 +4,25 @@ from .keys import readKeys
 from .utils import listDir
 
 
-def decrypt():
+def decryptFile(in_path, out_path, iv=None, key=None, unpack=True):
+    cmd = [
+        in_path,
+        out_path
+    ]
+
+    if iv:
+        cmd.append(f'-iv {iv}')
+
+    if key:
+        cmd.append(f'-k {key}')
+
+    if not unpack:
+        cmd.append('-decrypt')
+
+    return runXpwntool(cmd)
+
+
+def decryptAll():
     keys = readKeys()
 
     things = ('dmg', 'dfu', 'img3', 'kernelcache')
@@ -31,38 +49,31 @@ def decrypt():
                 filename, iv, k = keys.get(name)
                 info.update({path.name: [iv, k]})
 
-    cmds = []
-
     for name, kv in info.items():
         iv, k = kv
+
+        decrypted = f'{name}.decrypted'
+
         if len(iv) == 32 and len(k) == 64:
-            cmd = (
-                name,
-                f'{name}.decrypted',
-                f'-iv {iv}',
-                f'-k {k}'
-            )
-            cmds.append(cmd)
+            decryptFile(name, decrypted, iv, k)
+
         else:
-            cmd = (
-                name,
-                f'{name}.decrypted'
-            )
-            cmds.append(cmd)
-
-    for cmd in cmds:
-        # FIXME
-        # Weird, this only works if ran inside a shell
-        runXpwntool(cmd)
+            decryptFile(name, decrypted)
 
 
-def packFile(path, template, pwn_llb=False):
+def packFile(in_path, out_path, template, iv=None, key=None, pwn_llb=False):
     cmd = [
-        path,
-        f'{path}.packed',
+        in_path,
+        out_path,
         '-t',
         template
     ]
+
+    if iv:
+        cmd.append(f'-iv {iv}')
+
+    if key:
+        cmd.append(f'-k {key}')
 
     if pwn_llb:
         cmd.append('-xn8824k')

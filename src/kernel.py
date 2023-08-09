@@ -1,17 +1,17 @@
 
 from .diff import createBSDiffPatchFile
+from .file import moveFileToPath
+from .keys import readKeys
 from .patch import patchFileWithFuzzyPatcher
 from .utils import listDir
-from .xpwntool import packFile
-
-# FIXME
-# Apparently all kernel patching is messed up.
-# Figure out what's going wrong.
-
-# Yup, kernel patching is 100% not working.
+from .xpwntool import decryptFile, packFile
 
 
 def patchKernel(bundle, version):
+    keys = readKeys()
+
+    path, iv, key = keys['kernelcache']
+
     name = [n.name for n in listDir('kernelcache*.decrypted')][0]
 
     patch_path = f'kernel\\ patches/{version}/{version}.json'
@@ -20,12 +20,28 @@ def patchKernel(bundle, version):
 
     patchFileWithFuzzyPatcher(name, patched, patch_path)
 
-    packed = f'{patched}.packed'
+    ########################################################################
 
-    packFile(patched, name.replace('.decrypted', ''))
+    # The kernel must be compressed in order to boot.
+    # This awful code does that. I'm not sure how to compress with xpwntool,
+    # so only way I know for now is just to encrypt again, which will compress
+    # the kernel. All we have to do is decrypt again, and make use of the
+    # -decrypt argument so we don't strip any img3 or lzss headers.
 
-    original = name.replace('.decrypted', '')
+    encrypted_compressed = f'{patched}.encrypted.compressed'
 
-    bspatch_path = f'bundles/{bundle}/{original}.patch'
+    packFile(patched, encrypted_compressed, path, iv, key)
 
-    createBSDiffPatchFile(original, packed, bspatch_path)
+    decrypted_compressed = f'{patched}.decrypted.compressed'
+
+    decryptFile(encrypted_compressed, decrypted_compressed, iv, key, False)
+
+    packed = f'{decrypted_compressed}.packed'
+
+    moveFileToPath(decrypted_compressed, packed)
+
+    ########################################################################
+
+    bspatch_path = f'bundles/{bundle}/{path}.patch'
+
+    createBSDiffPatchFile(path, packed, bspatch_path)

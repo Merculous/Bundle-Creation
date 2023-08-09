@@ -1,6 +1,6 @@
 
 from .file import getFileHash
-from .remote import readJSONFromURL, downloadFile
+from .remote import downloadFile, readJSONFromURL
 from .utils import selectFromList
 
 api = 'https://api.ipsw.me/v4'

@@ -3,17 +3,18 @@ from argparse import ArgumentParser
 
 from .iboot import getBootchainReady, patchiBoot
 from .ipsw import extractFiles, makeIpsw
-from .ipsw_me import getBuildidForVersion, downloadArchive
+from .ipsw_me import downloadArchive, getBuildidForVersion
 from .json import writeJSON
 from .kernel import patchKernel
 from .plist import getCodename, getRestoreInfo, initInfoPlist, readPlist
-from .utils import clean, createBundleFolder
+from .utils import binCheck, clean, createBundleFolder
 from .wiki import getKeys
-from .xpwntool import decrypt
+from .xpwntool import decryptAll
 
 
 def go(ipsw):
     clean()
+    binCheck()
     extractFiles(ipsw)
     codename = getCodename()
     data = readPlist('.tmp/Restore.plist')
@@ -22,7 +23,7 @@ def go(ipsw):
     createBundleFolder(bundle_name)
     getBootchainReady(info.get('ramdisk'))
     getKeys(codename, info.get('buildid'), info.get('device'))
-    decrypt()
+    decryptAll()
     # patchRamdisk(bundle_name)
     patchiBoot(bundle_name, info.get('version'))
     patchKernel(bundle_name, info.get('version'))

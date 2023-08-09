@@ -1,12 +1,16 @@
 
 from pathlib import Path
 
-from .command import runHdutil, runAsrPatch
-from .file import getFileSize, copyFileToPath
+from .command import runAsrPatch, runHdutil
+from .file import copyFileToPath, getFileSize
 from .keys import readKeys
 from .patch import patchFileWithBSDiff
 from .utils import listDir
 from .xpwntool import packFile
+
+# FIXME
+# Current asr patches make asr get killed.
+# Most likely bad patching. Use different patcher.
 
 
 def replaceAsr(bundle):
@@ -77,6 +81,7 @@ def replaceAsr(bundle):
 
 def patchRamdisk(bundle):
     ramdisk = None
+
     for thing in listDir('*.decrypted'):
         if '.dmg' in thing.name:
             ramdisk = thing.name

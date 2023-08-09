@@ -1,5 +1,5 @@
 
-from .command import runCommand, runDmg
+from .command import run7zip, runDmg
 from .file import getFileSize
 from .keys import readKeys
 
@@ -21,7 +21,7 @@ def getRootFSInfo():
 
     root_fs_size = round(getFileSize('rootfs.dmg') / (1024 * 1024))
 
-    p7z_cmd = runCommand(('7z', 'l', 'rootfs.dmg'))
+    p7z_cmd = run7zip(('l', 'rootfs.dmg'))
     p7z_out = p7z_cmd[0].splitlines()
 
     for line in p7z_out:

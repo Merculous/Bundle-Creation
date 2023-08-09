@@ -1,0 +1,30 @@
+{
+    "7z": {
+        "required": true,
+        "exists": false
+    },
+    "asrpatch": {
+        "required": false,
+        "exists": false
+    },
+    "dmg": {
+        "required": true,
+        "exists": false
+    },
+    "fuzzy_patcher": {
+        "required": true,
+        "exists": false
+    },
+    "hdutil": {
+        "required": false,
+        "exists": false
+    },
+    "iBoot32Patcher": {
+        "required": true,
+        "exists": false
+    },
+    "xpwntool": {
+        "required": true,
+        "exists": false
+    }
+}
