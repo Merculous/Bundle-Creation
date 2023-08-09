@@ -52,8 +52,8 @@ def clean():
         '.packed',
         'kernelcache',
         'asr',
-        'Restore',
-        'Keys'
+        'Restore.json',
+        'Keys.json'
     )
 
     tmp = []
