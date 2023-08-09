@@ -72,3 +72,25 @@ AppleImage3NORAccess::_getSuperBlock imageVersion: 3
 Use commit 0da9adbe2aa40a06769a450d9ae1d2383d2e8be0 (right before checkm8 addition)
 
 Some reason alloc8 is broken with the latest commit.
+
+# Credits
+
+Do not associate ordering with varied importance, they all are important equally.
+
+axi0mX https://twitter.com/axi0mX
+	- ipwndfu
+
+pimskeks https://twitter.com/pimskeks
+	- idevicerestore
+
+planetbeing https://twitter.com/planetbeing
+	- xpwn
+
+iH8sn0w https://twitter.com/iH8sn0w
+	- iBoot32Patcher, kernel patches
+
+MuscleNerd https://twitter.com/MuscleNerd
+	- fuzzy_patcher
+
+And everyone else who's contributed information about doing this kind of work. You all
+are amazing people. If you know if contributed in making this work public, thank you!
