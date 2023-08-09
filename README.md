@@ -69,10 +69,10 @@ AppleImage3NORAccess::_getSuperBlock imageVersion: 3
 
 Below seems to be an iOS 6+ issue
 
-entering ramrod_ticket_update
-failed to update ticket: 8
-0: RamrodErrorDomain/8: ramrod_ticket_update: no ticket available
-unable to convert ramrod error 8
+entering ramrod_ticket_update  
+failed to update ticket: 8  
+0: RamrodErrorDomain/8: ramrod_ticket_update: no ticket available  
+unable to convert ramrod error 8 
 
 # ipwndfu
 
