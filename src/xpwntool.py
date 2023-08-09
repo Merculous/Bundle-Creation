@@ -7,16 +7,15 @@ from .utils import listDir
 def decrypt():
     keys = readKeys()
 
-    exts = ('dmg', 'dfu', 'img3')
+    things = ('dmg', 'dfu', 'img3', 'kernelcache')
+
     paths = []
 
-    for path in listDir('*'):
-        for ext in exts:
-            if ext in path.name:
-                paths.append(path)
+    for thing in things:
+        matches = listDir(f'*{thing}*')
 
-        if path.name.startswith('kernelcache'):
-            paths.append(path)
+        if matches:
+            paths.extend(matches)
 
     info = {}
 

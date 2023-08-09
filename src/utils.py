@@ -33,21 +33,21 @@ def clean():
         '.img3',
         '.json',
         '.patched',
-        '.packed'
+        '.packed',
+        'kernelcache',
+        'asr'
     )
 
-    for thing in Path().glob('*'):
-        for ext in stuff:
-            if thing.name.endswith(ext):
-                removeFile(thing)
+    tmp = []
 
-        if thing.name.startswith('kernelcache'):
-            removeFile(thing)
+    for thing in stuff:
+        matches = listDir(f'*{thing}*')
 
-    asr = Path('asr')
+        if matches:
+            tmp.extend(matches)
 
-    if asr.exists():
-        removeFile(asr)
+    for path in tmp:
+        removeFile(path)
 
     removeDirectory('.tmp')
 

@@ -10,19 +10,17 @@ from .xpwntool import packFile
 # Figure out what's going wrong.
 
 def patchKernel(bundle, version):
-    name = None
-    for path in listDir('*.decrypted'):
-        if path.name.startswith('kernelcache'):
-            name = path.name
-            break
+    name = [n.name for n in listDir('kernelcache*.decrypted')][0]
 
     patch_path = f'kernel\\ patches/{version}/{version}.json'
 
-    patchFileWithFuzzyPatcher(name, f'{name}.patched', patch_path)
+    patched = f'{name}.patched'
 
-    packed = f'{name}.patched.packed'
+    patchFileWithFuzzyPatcher(name, patched, patch_path)
 
-    packFile(f'{name}.patched', name.replace('.decrypted', ''))
+    packed = f'{patched}.packed'
+
+    packFile(patched, name.replace('.decrypted', ''))
 
     original = name.replace('.decrypted', '')
 

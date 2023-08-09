@@ -23,10 +23,11 @@ def patchiBoot(bundle, version):
     bootchain = []
     iBoot = ('iBSS', 'iBEC', 'LLB', 'iBoot')
 
-    for thing in listDir('*'):
-        for name in iBoot:
-            if thing.name.startswith(name) and thing.name.endswith('.decrypted'):
-                bootchain.append(thing.name)
+    for name in iBoot:
+        match = listDir(f'{name}*.decrypted')
+
+        if match:
+            bootchain.extend([n.name for n in match])
 
     for name in bootchain:
         cmd = [
@@ -34,10 +35,6 @@ def patchiBoot(bundle, version):
             f'{name}.patched',
             '--rsa'
         ]
-
-        # TODO
-        # Pre iOS 5, iBSS/LLB can actually use boot-args
-        # Maybe add some code to do just that?
 
         restore_args = (
             '--debug',
@@ -103,8 +100,6 @@ def patchiBoot(bundle, version):
 
 
 def getBootchainReady(ramdisk):
-    tmp_contents = listDir('*', '.tmp', True)
-
     needed = (
         'iBSS',
         'iBEC',
@@ -116,10 +111,11 @@ def getBootchainReady(ramdisk):
 
     needed_paths = []
 
-    for thing in tmp_contents:
-        for filename in needed:
-            if filename in thing.name:
-                needed_paths.append(thing)
+    for filename in needed:
+        match = listDir(f'{filename}*', '.tmp', True)
+
+        if match:
+            needed_paths.extend(match)
 
     for path in needed_paths:
         copyFileToPath(path, '.')
