@@ -2,6 +2,7 @@
 from .command import runiBoot32Patcher
 from .diff import createBSDiffPatchFile
 from .file import copyFileToPath
+from .keys import readKeys
 from .utils import listDir
 from .xpwntool import packFile
 
@@ -86,12 +87,16 @@ def patchiBoot(bundle, version):
 
         new_packed = f'{new}.packed'
 
-        pwn_llb = False
-
         if 'LLB' in new:
-            pwn_llb = True
+            # 24Kpwn LLB needs to be encrypted in order to work
+            # Deals with KBAG and some other stuff
 
-        packFile(new, new_packed, orig, pwn_llb=pwn_llb)
+            keys = readKeys()
+            llb_name, iv, key = keys['LLB']
+            packFile(new, new_packed, orig, iv, key, True)
+
+        else:
+            packFile(new, new_packed, orig)
 
         patch_path = f'bundles/{bundle}/{patch_name}'
 
