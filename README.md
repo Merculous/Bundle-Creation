@@ -6,7 +6,6 @@ hdutil: xpwn
 iBoot32Patcher: https://github.com/Merculous/iBoot32Patcher  
 xpwntool: xpwn  
 7zip: this is for getting the mount name for the rootfs  
-fuzzy_patcher: https://github.com/Merculous/ios-jb-tools
 
 Put the binaries or symlink inside a folder called `bin` (it must be inside this projects folder)
 
@@ -37,10 +36,6 @@ download asrpatch:
 download 7zip
 
 - put inside `bin`
-
-compile fuzzy_patcher: https://github.com/Merculous/ios-jb-tools
-
-- run `make` inside `tools_src/fuzzy_patcher`
 
 # creating bundles
 
@@ -99,8 +94,6 @@ pimskeks https://twitter.com/pimskeks - idevicerestore
 planetbeing https://twitter.com/planetbeing - xpwn
 
 iH8sn0w https://twitter.com/iH8sn0w - iBoot32Patcher, kernel patches
-
-MuscleNerd https://twitter.com/MuscleNerd - fuzzy_patcher
 
 And everyone else who's contributed information about doing this kind of work. You all
 are amazing people. If you know if contributed in making this work public, thank you!
