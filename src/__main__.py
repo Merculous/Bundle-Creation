@@ -5,7 +5,7 @@ from .iboot import getBootchainReady, patchiBoot
 from .ipsw import extractFiles, makeIpsw
 from .ipsw_me import downloadArchive, getBuildidForVersion
 from .json import writeJSON
-from .kernel import patchKernel
+from .kernel import patchAndCompressKernel
 from .plist import getCodename, getRestoreInfo, initInfoPlist, readPlist
 from .utils import binCheck, clean, createBundleFolder
 from .wiki import getKeys
@@ -13,6 +13,8 @@ from .xpwntool import decryptAll
 
 
 def go(ipsw):
+    supported = ('5.0', '5.0.1', '5.1', '5.1.1')
+
     clean()
     binCheck()
     extractFiles(ipsw)
@@ -20,16 +22,22 @@ def go(ipsw):
     data = readPlist('.tmp/Restore.plist')
     writeJSON(data, 'Restore.json')
     bundle_name, info = getRestoreInfo('Restore.json')
-    createBundleFolder(bundle_name)
-    getBootchainReady(info.get('ramdisk'))
-    getKeys(codename, info.get('buildid'), info.get('device'))
-    decryptAll()
-    # patchRamdisk(bundle_name)
-    patchiBoot(bundle_name, info.get('version'))
-    patchKernel(bundle_name, info.get('version'))
-    initInfoPlist(bundle_name, ipsw, info.get('board'))
-    # replaceAsr(f'bundles/{bundle_name}')
-    makeIpsw(f'bundles/{bundle_name}')
+
+    if info.get('version') in supported:
+        createBundleFolder(bundle_name)
+        getBootchainReady(info.get('ramdisk'))
+        getKeys(codename, info.get('buildid'), info.get('device'))
+        decryptAll()
+        # patchRamdisk(bundle_name)
+        patchiBoot(bundle_name, info.get('version'))
+        patchAndCompressKernel(bundle_name)
+        initInfoPlist(bundle_name, ipsw, info.get('board'))
+        # replaceAsr(f'bundles/{bundle_name}')
+        makeIpsw(f'bundles/{bundle_name}')
+
+    else:
+        print(f'{info.get("version")} is not fully supported yet!')
+
     clean()
 
 

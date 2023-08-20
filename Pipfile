@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 bsdiff4 = "*"
+pykernelpatch = "==1.0.1"
 
 [dev-packages]
 

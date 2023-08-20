@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "f0d13495672e969978d0212fe1db7405c268ca3c7890d33dcc96755a402890a4"
+            "sha256": "8ec0b965b5d71e6004e97a6c535db1a45b80cf21e1533ad72e163cb643fc6409"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -123,6 +123,15 @@
             ],
             "index": "pypi",
             "version": "==1.2.3"
+        },
+        "pykernelpatch": {
+            "hashes": [
+                "sha256:57fea50e859fc5d6cd3fa0bc896d588909174db287bd2a78c030c2104175361d",
+                "sha256:d11c490e0f445c9abe62d42e05151ddaae03528bf567c5f3a584537b6e5d0291"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.7' and python_version < '4.0'",
+            "version": "==1.0.1"
         }
     },
     "develop": {}

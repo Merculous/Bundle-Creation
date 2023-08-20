@@ -68,11 +68,6 @@ def runiBoot32Patcher(args):
     return runShellCommand(cmd)
 
 
-def runFuzzyPatcher(args):
-    cmd = ('bin/fuzzy_patcher', *args)
-    return runShellCommand(cmd)
-
-
 def run7zip(args):
     cmd = ('bin/7z', *args)
     return runCommand(cmd)

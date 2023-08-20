@@ -2,23 +2,22 @@
 from .diff import createBSDiffPatchFile
 from .file import moveFileToPath
 from .keys import readKeys
-from .patch import patchFileWithFuzzyPatcher
 from .utils import listDir
 from .xpwntool import decryptFile, packFile
 
+from kernelpatch.patch import patchKernel
 
-def patchKernel(bundle, version):
+
+def patchAndCompressKernel(bundle):
     keys = readKeys()
 
     path, iv, key = keys['kernelcache']
 
     name = [n.name for n in listDir('kernelcache*.decrypted')][0]
 
-    patch_path = f'kernel\\ patches/{version}/{version}.json'
-
     patched = f'{name}.patched'
 
-    patchFileWithFuzzyPatcher(name, patched, patch_path)
+    patchKernel(name, patched)
 
     ########################################################################
 
