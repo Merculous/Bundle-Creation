@@ -1,11 +1,11 @@
 
 from .diff import createBSDiffPatchFile
-from .file import moveFileToPath
+from .file import moveFileToPath, readBinaryFile, writeBinaryFile
 from .keys import readKeys
 from .utils import listDir
 from .xpwntool import decryptFile, packFile
 
-from kernelpatch.patch import patchKernel
+from kernelpatch.patch import Patch
 
 
 def patchAndCompressKernel(bundle):
@@ -17,7 +17,11 @@ def patchAndCompressKernel(bundle):
 
     patched = f'{name}.patched'
 
-    patchKernel(name, patched)
+    decrypted_data = readBinaryFile(name)
+
+    patched_data = Patch(decrypted_data).patchKernel()
+
+    writeBinaryFile(patched_data, patched)
 
     ########################################################################
 
