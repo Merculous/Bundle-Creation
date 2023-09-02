@@ -6,7 +6,7 @@ from .iboot import getBootchainReady, patchiBoot
 from .ipsw import extractFiles, makeIpsw
 from .ipsw_me import downloadArchive, getBuildidForVersion
 from .kernel import patchAndCompressKernel
-from .plist import getCodename, getRestoreInfo, initInfoPlist
+from .plist import getBuildManifestInfo, initInfoPlist
 from .utils import binCheck, clean, createBundleFolder
 from .wiki import getKeys
 from .xpwntool import decryptAll
@@ -18,23 +18,32 @@ def go(ipsw):
     binCheck()
 
     zip_dir = extractFiles(ipsw)
-    codename = getCodename(zip_dir)
 
-    bundle_name, info = getRestoreInfo(f'{zip_dir}/Restore.plist')
+    manifest = getBuildManifestInfo(f'{zip_dir}/BuildManifest.plist')
 
-    if info.get('version') in supported:
+    device = manifest['device']
+    board = manifest['board']
+    version = manifest['version']
+    buildid = manifest['buildid']
+    codename = manifest['codename']
+
+    bundle_name = f'{device}_{board}_{version}_{buildid}.bundle'
+
+    if version in supported:
         createBundleFolder(bundle_name)
 
-        working_dir = getBootchainReady(info.get('ramdisk'), zip_dir)
+        restore_ramdisk = manifest['files']['RestoreRamDisk']['Info']['Path']
 
-        keys = getKeys(codename, info.get('buildid'), info.get('device'))
+        working_dir = getBootchainReady(restore_ramdisk, zip_dir)
+
+        keys = getKeys(codename, buildid, device)
         decryptAll(keys, working_dir)
 
         # patchRamdisk(bundle_name)
-        patchiBoot(keys, bundle_name, info.get('version'), working_dir)
+        patchiBoot(keys, bundle_name, version, working_dir)
         patchAndCompressKernel(keys, bundle_name, working_dir)
 
-        initInfoPlist(keys, bundle_name, ipsw, info.get('board'), zip_dir, working_dir)
+        initInfoPlist(keys, bundle_name, ipsw, board, zip_dir, working_dir)
 
         # replaceAsr(keys, f'bundles/{bundle_name}')
 
@@ -45,7 +54,7 @@ def go(ipsw):
         clean((zip_dir, working_dir))
 
     else:
-        print(f'{info.get("version")} is not fully supported yet!')
+        print(f'{version} is not fully supported yet!')
 
 
 def main():

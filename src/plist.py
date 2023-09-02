@@ -16,40 +16,22 @@ def writePlist(data, path):
         plistlib.dump(data, f)
 
 
-def getCodename(path):
-    data = readPlist(f'{path}/BuildManifest.plist')
-
-    stuff = data.get('BuildIdentities')[0]
-    info = stuff.get('Info')
-    codename = info.get('BuildTrain')
-
-    return codename
-
-
-def getRestoreInfo(path):
+def getBuildManifestInfo(path):
     data = readPlist(path)
 
-    platform = data.get('DeviceMap')[0]['Platform']
+    info = {}
 
-    info = {
-        'device': data.get('ProductType'),
-        'board': data.get('DeviceMap')[0]['BoardConfig'],
-        'version': data.get('ProductVersion'),
-        'buildid': data.get('ProductBuildVersion'),
-        'platform': platform,
-        'ramdisk': data.get('RamDisksByPlatform')[platform]['User']
-    }
+    info['buildid'] = data['ProductBuildVersion']
+    info['version'] = data['ProductVersion']
+    info['device'] = data['SupportedProductTypes'][0]
 
-    things = (
-        info.get('device'),
-        info.get('board'),
-        info.get('version'),
-        info.get('buildid')
-    )
+    build_identities = data['BuildIdentities'][0]
 
-    bundle_name = f'{things[0]}_{things[1]}_{things[2]}_{things[3]}.bundle'
+    info['codename'] = build_identities['Info']['BuildTrain']
+    info['board'] = build_identities['Info']['DeviceClass']
+    info['files'] = build_identities['Manifest']
 
-    return (bundle_name, info)
+    return info
 
 # FIXME
 # This function below is garbage and needs to be updated

@@ -1,6 +1,7 @@
 
 import tempfile
+from pathlib import Path
 
 
 def makeTempDir():
-    return tempfile.mkdtemp()
+    return Path(tempfile.mkdtemp())
