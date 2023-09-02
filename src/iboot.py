@@ -1,8 +1,10 @@
 
-from .command import runiBoot32Patcher
+from pathlib import Path
+
+from .command import runShellCommand
 from .diff import createBSDiffPatchFile
 from .file import copyFileToPath
-from .keys import readKeys
+from .temp import makeTempDir
 from .utils import listDir
 from .xpwntool import packFile
 
@@ -19,34 +21,40 @@ from .xpwntool import packFile
 # Need to apply other payload besides 2,1.
 
 
-def patchiBoot(bundle, version):
+def patchiBoot(keys, bundle, version, working_dir):
     bootchain = []
     iBoot = ('iBSS', 'iBEC', 'LLB', 'iBoot')
 
     for name in iBoot:
-        match = listDir(f'{name}*.decrypted')
+        match = listDir(f'{name}*.decrypted', working_dir)
 
         if match:
-            bootchain.extend([n.name for n in match])
+            bootchain.extend([str(n) for n in match])
 
     for name in bootchain:
         cmd = [
+            'bin/iBoot32Patcher',
             name,
             f'{name}.patched',
             '--rsa'
         ]
 
-        restore_args = (
-            '--debug',
-            '-b',
-            '"rd=md0 -v debug=0x14e serial=3 cs_enforcement_disable=1"'
-        )
+        part1 = ('--debug', '-b')
 
-        boot_args = (
-            '--debug',
-            '-b',
-            '"-v debug=0x14e serial=3 cs_enforcement_disable=1"'
-        )
+        part2 = [
+            'rd=md0',
+            '-v',
+            'debug=0x14e',
+            'serial=3',
+            'cs_enforcement_disable=1'
+        ]
+
+        part3 = [
+            *part1,
+            '"' +
+            ' '.join(part2) +
+            '"'
+        ]
 
         supported_versions = list(range(3, 11))
 
@@ -55,13 +63,14 @@ def patchiBoot(bundle, version):
         if base_version in supported_versions:
             if base_version == 3 or base_version == 4:
                 if 'iBSS' in name:
-                    cmd.extend(restore_args)
+                    cmd.extend(part3)
 
             if 'iBEC' in name:
-                cmd.extend(restore_args)
+                cmd.extend(part3)
 
             if 'iBoot' in name:
-                cmd.extend(boot_args)
+                part3[2] = part3[2].replace('rd=md0 ', '')
+                cmd.extend(part3)
 
         else:
             raise Exception(f'Unsupported iOS: {version}')
@@ -76,7 +85,7 @@ def patchiBoot(bundle, version):
         # to the 'binary', thus needing to run cmd as a shell command
         # if I don't run the command as a shell command, the '-b -v'
         # arg was never passed, thus only the '--rsa' is passed
-        runiBoot32Patcher(cmd)
+        runShellCommand(' '.join(cmd))
 
         orig = name.split('.decrypted')[0]
         new = cmd[1]
@@ -91,19 +100,18 @@ def patchiBoot(bundle, version):
             # 24Kpwn LLB needs to be encrypted in order to work
             # Deals with KBAG and some other stuff
 
-            keys = readKeys()
             llb_name, iv, key = keys['LLB']
             packFile(new, new_packed, orig, iv, key, True)
 
         else:
             packFile(new, new_packed, orig)
 
-        patch_path = f'bundles/{bundle}/{patch_name}'
+        patch_path = f'bundles/{bundle}/{Path(patch_name).name}'
 
         createBSDiffPatchFile(orig, new_packed, patch_path)
 
 
-def getBootchainReady(ramdisk):
+def getBootchainReady(ramdisk, zip_dir):
     needed = (
         'iBSS',
         'iBEC',
@@ -116,10 +124,14 @@ def getBootchainReady(ramdisk):
     needed_paths = []
 
     for filename in needed:
-        match = listDir(f'{filename}*', '.tmp', True)
+        match = listDir(f'{filename}*', zip_dir, True)
 
         if match:
             needed_paths.extend(match)
 
+    working_dir = makeTempDir()
+
     for path in needed_paths:
-        copyFileToPath(path, '.')
+        copyFileToPath(path, working_dir)
+
+    return working_dir

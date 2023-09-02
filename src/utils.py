@@ -3,12 +3,11 @@ import os
 import shutil
 from pathlib import Path
 
-from .file import removeFile
-from .json import readJSON
+from .json import readJSONFile
 
 
 def binCheck():
-    tools = readJSON('tools.json')
+    tools = readJSONFile('tools.json')
 
     for tool in tools:
         if tools[tool]['required']:
@@ -42,32 +41,9 @@ def createBundleFolder(name):
     makeDirs(f'bundles/{name}')
 
 
-def clean():
-    stuff = (
-        '.dmg',
-        '.decrypted',
-        '.dfu',
-        '.img3',
-        '.patched',
-        '.packed',
-        'kernelcache',
-        'asr',
-        'Restore.json',
-        'Keys.json'
-    )
-
-    tmp = []
-
-    for thing in stuff:
-        matches = listDir(f'*{thing}*')
-
-        if matches:
-            tmp.extend(matches)
-
-    for path in tmp:
-        removeFile(path)
-
-    removeDirectory('.tmp')
+def clean(paths):
+    for path in paths:
+        removeDirectory(path)
 
 
 def selectFromList(choices):

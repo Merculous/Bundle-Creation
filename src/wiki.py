@@ -1,6 +1,4 @@
 
-from .json import writeJSON
-from .keys import readKeys
 from .remote import readFromURL
 
 
@@ -26,7 +24,7 @@ def parseKeyTemplate(template):
                 v = line[1].strip()
                 info['data'].update({k: v})
 
-    writeJSON(info, 'Keys.json')
+    return info
 
 
 def getKeys(codename, buildid, device):
@@ -34,11 +32,9 @@ def getKeys(codename, buildid, device):
     url = f'{wiki_url}?title={codename}_{buildid}_({device})&action=raw'
 
     template = readFromURL(url, 's', False)
-    parseKeyTemplate(template)
+    key_data = parseKeyTemplate(template)
 
-    data = readKeys()
-
-    data = data.get('data')
+    data = key_data.get('data')
 
     needed_keys = {
         'ramdisk': [
@@ -77,4 +73,4 @@ def getKeys(codename, buildid, device):
         ]
     }
 
-    writeJSON(needed_keys, 'Keys.json')
+    return needed_keys

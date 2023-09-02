@@ -1,9 +1,7 @@
 
 from pathlib import Path
 
-from .command import runAsrPatch, runHdutil
 from .file import copyFileToPath, getFileSize
-from .keys import readKeys
 from .patch import patchFileWithBSDiff
 from .utils import listDir
 from .xpwntool import packFile

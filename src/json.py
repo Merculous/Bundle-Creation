@@ -2,11 +2,19 @@
 import json
 
 
-def writeJSON(data, path, indent=2):
+def formatToJSONStr(data):
+    return json.dumps(data)
+
+
+def readJSONStr(data):
+    return json.loads(data)
+
+
+def writeJSONFile(data, path, indent=2):
     with open(path, 'w') as f:
         json.dump(data, f, indent=indent)
 
 
-def readJSON(path):
+def readJSONFile(path):
     with open(path) as f:
         return json.load(f)

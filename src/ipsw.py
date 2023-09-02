@@ -4,20 +4,23 @@ from zipfile import ZipFile
 from .command import runShellCommand
 from .file import moveFileToPath, removeFile
 from .plist import readPlist
-from .utils import listDir, makeDirs
+from .temp import makeTempDir
+from .utils import listDir
 
 
 def extractFiles(archive):
-    makeDirs('.tmp')
+    zip_dir = makeTempDir()
 
     with ZipFile(archive) as f:
-        f.extractall('.tmp')
+        f.extractall(zip_dir)
+
+    return zip_dir
 
 
-def makeIpsw(bundle):
+def makeIpsw(bundle, cwd, zip_dir, working_dir):
     data = readPlist(f'{bundle}/Info.plist')
 
-    packed = listDir('*.packed')
+    packed = listDir('*.packed', working_dir)
 
     bootchain = data.get('FirmwarePatches')
 
@@ -31,21 +34,21 @@ def makeIpsw(bundle):
             prefix = filename.name.split('.')[0]
 
             if prefix in path:
-                tmp_path = f'.tmp/{path}'
-                moveFileToPath(filename, tmp_path)
+                zip_path = f'{zip_dir}/{path}'
+                moveFileToPath(filename, zip_path)
 
     # For iTunes users (gets rid of meaningless popup)
-    removeFile('.tmp/BuildManifest.plist')
+    removeFile(f'{zip_dir}/BuildManifest.plist')
 
     pack = (
         'cd',
-        '.tmp',
+        zip_dir,
         '&&',
         '7z',
         'a',
         '-tzip',
-        '../custom.ipsw',
+        f'{cwd}/custom.ipsw',
         '*'
     )
 
-    runShellCommand(pack)
+    runShellCommand(' '.join(pack))

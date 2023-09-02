@@ -1,9 +1,9 @@
 
-import json
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from .file import writeBinaryFile
+from .json import readJSONStr
 
 
 def readFromURL(url, mode, use_json):
@@ -18,7 +18,7 @@ def readFromURL(url, mode, use_json):
             data = data.decode('utf-8')
 
             if use_json:
-                return json.loads(data)
+                return readJSONStr(data)
             else:
                 return data
 

@@ -1,19 +1,18 @@
 
-from .diff import createBSDiffPatchFile
-from .file import moveFileToPath, readBinaryFile, writeBinaryFile
-from .keys import readKeys
-from .utils import listDir
-from .xpwntool import decryptFile, packFile
+from pathlib import Path
 
 from kernelpatch.patch import Patch
 
+from .diff import createBSDiffPatchFile
+from .file import moveFileToPath, readBinaryFile, writeBinaryFile
+from .utils import listDir
+from .xpwntool import decryptFile, packFile
 
-def patchAndCompressKernel(bundle):
-    keys = readKeys()
 
+def patchAndCompressKernel(keys, bundle, working_dir):
     path, iv, key = keys['kernelcache']
 
-    name = [n.name for n in listDir('kernelcache*.decrypted')][0]
+    name = [n for n in listDir('kernelcache*.decrypted', working_dir)][0]
 
     patched = f'{name}.patched'
 
@@ -33,6 +32,8 @@ def patchAndCompressKernel(bundle):
 
     encrypted_compressed = f'{patched}.encrypted.compressed'
 
+    path = f'{working_dir}/{path}'
+
     packFile(patched, encrypted_compressed, path, iv, key)
 
     decrypted_compressed = f'{patched}.decrypted.compressed'
@@ -45,6 +46,6 @@ def patchAndCompressKernel(bundle):
 
     ########################################################################
 
-    bspatch_path = f'bundles/{bundle}/{path}.patch'
+    bspatch_path = f'bundles/{bundle}/{Path(path).name}.patch'
 
     createBSDiffPatchFile(path, packed, bspatch_path)

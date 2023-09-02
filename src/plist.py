@@ -4,9 +4,6 @@ from pathlib import Path
 
 from .dmg import getRootFSInfo
 from .file import getFileHash
-from .json import readJSON
-from .keys import readKeys
-from .utils import removeFile
 
 
 def readPlist(path):
@@ -19,8 +16,8 @@ def writePlist(data, path):
         plistlib.dump(data, f)
 
 
-def getCodename():
-    data = readPlist('.tmp/BuildManifest.plist')
+def getCodename(path):
+    data = readPlist(f'{path}/BuildManifest.plist')
 
     stuff = data.get('BuildIdentities')[0]
     info = stuff.get('Info')
@@ -30,7 +27,7 @@ def getCodename():
 
 
 def getRestoreInfo(path):
-    data = readJSON(path)
+    data = readPlist(path)
 
     platform = data.get('DeviceMap')[0]['Platform']
 
@@ -52,18 +49,14 @@ def getRestoreInfo(path):
 
     bundle_name = f'{things[0]}_{things[1]}_{things[2]}_{things[3]}.bundle'
 
-    removeFile('Restore.json')
-
     return (bundle_name, info)
 
 # FIXME
 # This function below is garbage and needs to be updated
 
 
-def initInfoPlist(bundle, ipsw, board):
+def initInfoPlist(keys, bundle, ipsw, board, zip_dir, working_dir):
     plist_data = readPlist('Info.plist')
-
-    keys = readKeys()
 
     dfu_path = 'Firmware/dfu'
     other_path = f'Firmware/all_flash/all_flash.{board}.production'
@@ -137,7 +130,7 @@ def initInfoPlist(bundle, ipsw, board):
 
     info_path = f'bundles/{bundle}/Info.plist'
 
-    fs_info = getRootFSInfo()
+    fs_info = getRootFSInfo(keys, zip_dir, working_dir)
 
     plist_data['RootFilesystem'] = fs_info[0]
     plist_data['RootFilesystemMountVolume'] = fs_info[1]
