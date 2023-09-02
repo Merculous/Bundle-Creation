@@ -1,5 +1,5 @@
 
-from .command import runShellCommand
+from .command import runXpwntool
 from .utils import listDir
 
 # FFS xpwntool won't work correctly unless I'm using shell :/
@@ -7,7 +7,6 @@ from .utils import listDir
 
 def decryptFile(in_path, out_path, iv=None, key=None, unpack=True):
     cmd = [
-        'bin/xpwntool',
         in_path,
         out_path
     ]
@@ -21,7 +20,7 @@ def decryptFile(in_path, out_path, iv=None, key=None, unpack=True):
     if not unpack:
         cmd.append('-decrypt')
 
-    return runShellCommand(' '.join(cmd))
+    return runXpwntool(cmd)
 
 
 def decryptAll(keys, working_dir):
@@ -63,7 +62,6 @@ def decryptAll(keys, working_dir):
 
 def packFile(in_path, out_path, template, iv=None, key=None, pwn_llb=False):
     cmd = [
-        'bin/xpwntool',
         in_path,
         out_path,
         '-t',
@@ -79,4 +77,4 @@ def packFile(in_path, out_path, template, iv=None, key=None, pwn_llb=False):
     if pwn_llb:
         cmd.append('-xn8824k')
 
-    return runShellCommand(' '.join(cmd))
+    return runXpwntool(cmd)

@@ -1,5 +1,5 @@
 
-from .command import runCommandWithOutput, runShellCommand
+from .command import runDmg, run7zip
 from .file import getFileSize
 
 
@@ -10,18 +10,18 @@ def getRootFSInfo(keys, zip_dir, working_dir):
     decrypted_path = f'{working_dir}/rootfs.dmg'
 
     cmd = (
-        'bin/dmg',
         'extract',
         root_fs,
         decrypted_path,
         f'-k {root_fs_key}'
     )
 
-    runShellCommand(' '.join(cmd))
+    runDmg(cmd)
 
+    # FIXME
     root_fs_size = round(getFileSize(decrypted_path) / (1024 * 1024))
 
-    p7z_cmd = runCommandWithOutput(('bin/7z', 'l', decrypted_path))
+    p7z_cmd = run7zip(('l', decrypted_path))
     p7z_out = p7z_cmd[0].splitlines()
 
     for line in p7z_out:

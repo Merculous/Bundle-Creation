@@ -1,7 +1,7 @@
 
 from pathlib import Path
 
-from .command import runShellCommand
+from .command import runiBoot32Patcher
 from .diff import createBSDiffPatchFile
 from .file import copyFileToPath
 from .temp import makeTempDir
@@ -33,7 +33,6 @@ def patchiBoot(keys, bundle, version, working_dir):
 
     for name in bootchain:
         cmd = [
-            'bin/iBoot32Patcher',
             name,
             f'{name}.patched',
             '--rsa'
@@ -85,7 +84,7 @@ def patchiBoot(keys, bundle, version, working_dir):
         # to the 'binary', thus needing to run cmd as a shell command
         # if I don't run the command as a shell command, the '-b -v'
         # arg was never passed, thus only the '--rsa' is passed
-        runShellCommand(' '.join(cmd))
+        runiBoot32Patcher(cmd)
 
         orig = name.split('.decrypted')[0]
         new = cmd[1]

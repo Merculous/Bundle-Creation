@@ -1,7 +1,7 @@
 
 from zipfile import ZipFile
 
-from .command import runShellCommand
+from .command import run7zip
 from .file import moveFileToPath, removeFile
 from .plist import readPlist
 from .temp import makeTempDir
@@ -40,15 +40,11 @@ def makeIpsw(bundle, cwd, zip_dir, working_dir):
     # For iTunes users (gets rid of meaningless popup)
     removeFile(f'{zip_dir}/BuildManifest.plist')
 
-    pack = (
-        'cd',
-        zip_dir,
-        '&&',
-        '7z',
+    pack_ipsw = (
         'a',
         '-tzip',
         f'{cwd}/custom.ipsw',
-        '*'
+        f'{zip_dir}/*'
     )
 
-    runShellCommand(' '.join(pack))
+    run7zip(pack_ipsw)
