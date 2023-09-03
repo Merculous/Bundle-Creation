@@ -1,6 +1,6 @@
 
 from urllib.error import HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 from .file import writeBinaryFile
 from .json import readJSONStr
@@ -8,9 +8,12 @@ from .json import readJSONStr
 
 def readFromURL(url, mode, use_json):
     try:
-        r = urlopen(url)
-    except HTTPError:
+        req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        r = urlopen(req)
+    except HTTPError as e:
         print(f'Got error from url: {url}')
+        print(f'Status: {e.code}')
+        print(f'Reason: {e.reason}')
     else:
         data = r.read()
 

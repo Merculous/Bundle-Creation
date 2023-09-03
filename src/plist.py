@@ -2,22 +2,29 @@
 import plistlib
 from pathlib import Path
 
-from .dmg import getRootFSInfo
 from .file import getFileHash
 
 
-def readPlist(path):
+def readPlistFile(path):
     with open(path, 'rb') as f:
         return plistlib.load(f)
 
 
-def writePlist(data, path):
+def writePlistFile(data, path):
     with open(path, 'wb') as f:
         plistlib.dump(data, f)
 
 
-def getBuildManifestInfo(path):
-    data = readPlist(path)
+def serializePlist(data):
+    return plistlib.dumps(data)
+
+
+def deserializePlist(data):
+    return plistlib.loads(data)
+
+
+def getBuildManifestInfo(data):
+    data = deserializePlist(data)
 
     info = {}
 
@@ -27,96 +34,55 @@ def getBuildManifestInfo(path):
 
     build_identities = data['BuildIdentities'][0]
 
+    info['platform'] = build_identities['ApChipID']
     info['codename'] = build_identities['Info']['BuildTrain']
     info['board'] = build_identities['Info']['DeviceClass']
-    info['files'] = build_identities['Manifest']
+
+    info['files'] = {}
+
+    files = build_identities['Manifest']
+
+    for filename in files:
+        info['files'][filename] = Path(files[filename]['Info']['Path'])
 
     return info
 
-# FIXME
-# This function below is garbage and needs to be updated
 
+def initInfoPlist(files, working_dir, ipsw, bundle):
+    info_plist = readPlistFile('Info.plist')
 
-def initInfoPlist(keys, bundle, ipsw, board, zip_dir, working_dir):
-    plist_data = readPlist('Info.plist')
-
-    dfu_path = 'Firmware/dfu'
-    other_path = f'Firmware/all_flash/all_flash.{board}.production'
-
-    bootchain_paths = {
-        'iBSS': f'{dfu_path}/iBSS.{board}.RELEASE.dfu',
-        'iBEC': f'{dfu_path}/iBEC.{board}.RELEASE.dfu',
-        'LLB': f'{other_path}/LLB.{board}.RELEASE.img3',
-        'iBoot': f'{other_path}/iBoot.{board}.RELEASE.img3'
-    }
-
-    plist_data['Filename'] = ipsw
-    plist_data['Name'] = ipsw.split('_Restore.ipsw')[0]
-
-    bootchain = plist_data.get('FirmwarePatches')
-
-    kernel = bootchain.get('KernelCache')
-    kernel['File'] = keys.get('kernelcache')[0]
-    kernel['IV'] = keys.get('kernelcache')[1]
-    kernel['Key'] = keys.get('kernelcache')[2]
-    kernel['Patch'] = f'{keys.get("kernelcache")[0]}.patch'
-
-    ramdisk = bootchain.get('Restore Ramdisk')
-    ramdisk['File'] = f'{keys.get("ramdisk")[0]}.dmg'
-    ramdisk['IV'] = keys.get('ramdisk')[1]
-    ramdisk['Key'] = keys.get('ramdisk')[2]
-
-    ibss = bootchain.get('iBSS')
-    ibss['File'] = bootchain_paths.get('iBSS')
-    ibss['IV'] = keys.get('iBSS')[1]
-    ibss['Key'] = keys.get('iBSS')[2]
-    ibss['Patch'] = Path(ibss.get("File")).name.replace(".dfu", ".patch")
-
-    ibec = bootchain.get('iBEC')
-    ibec['File'] = bootchain_paths.get('iBEC')
-    ibec['IV'] = keys.get('iBEC')[1]
-    ibec['Key'] = keys.get('iBEC')[2]
-    ibec['Patch'] = Path(ibec.get("File")).name.replace(".dfu", ".patch")
-
-    llb = bootchain.get('LLB')
-    llb['File'] = bootchain_paths.get('LLB')
-    llb['IV'] = keys.get('LLB')[1]
-    llb['Key'] = keys.get('LLB')[2]
-    llb['Patch'] = Path(llb.get("File")).name.replace(".img3", ".patch")
-
-    iboot = bootchain.get('iBoot')
-    iboot['File'] = bootchain_paths.get('iBoot')
-    iboot['IV'] = keys.get('iBoot')[1]
-    iboot['Key'] = keys.get('iBoot')[2]
-    iboot['Patch'] = Path(iboot.get("File")).name.replace(".img3", ".patch")
-
-    # Check if there are files that aren't encrypted
-    # If so, then if there's a "Not Encrypted" string
-    # we change it to None, or json's equivalent: null
+    bootchain = info_plist['FirmwarePatches']
 
     for name in bootchain:
-        iv = bootchain.get(name)['IV']
-        k = bootchain.get(name)['Key']
+        for file in files:
+            if file == name:
+                orig = files[name]['orig']
+                parent = str(working_dir) + '/'
+                path = str(orig).replace(parent, '')
 
-        thingy = 'Not Encrypted'
+                bootchain[name]['File'] = path
+                bootchain[name]['IV'] = files[file]['iv']
+                bootchain[name]['Key'] = files[file]['key']
 
-        if iv == thingy or k == thingy:
-            bootchain[name]['IV'] = ''
-            bootchain[name]['Key'] = ''
+                if 'patch' in files[file]:
+                    bootchain[name]['Patch'] = files[file]['patch']
+                else:
+                    bootchain[name]['Patch'] = ''
 
-    plist_data['FirmwarePatches'] = bootchain
+    rootfs = files['RootFS']
 
-    ipsw_sha1 = getFileHash(ipsw)
+    info_plist['RootFilesystem'] = str(rootfs['orig'].name)
+    info_plist['RootFilesystemSize'] = rootfs['size']
+    info_plist['RootFilesystemKey'] = rootfs['key']
+    info_plist['RootFilesystemMountVolume'] = rootfs['mount_name']
 
-    plist_data['SHA1'] = ipsw_sha1
+    info_plist['SHA1'] = getFileHash(ipsw)
 
-    info_path = f'bundles/{bundle}/Info.plist'
+    info_plist['Filename'] = ipsw
 
-    fs_info = getRootFSInfo(keys, zip_dir, working_dir)
+    tmp = ipsw.split('_')
+    del tmp[-1]
 
-    plist_data['RootFilesystem'] = fs_info[0]
-    plist_data['RootFilesystemMountVolume'] = fs_info[1]
-    plist_data['RootFilesystemSize'] = fs_info[2]
-    plist_data['RootFilesystemKey'] = fs_info[3]
+    info_plist['Name'] = '_'.join(tmp)
 
-    writePlist(plist_data, info_path)
+    writePlistFile(info_plist, f'{bundle}/Info.plist')

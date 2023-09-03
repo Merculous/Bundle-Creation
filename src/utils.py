@@ -37,15 +37,6 @@ def removeDirectory(path):
     shutil.rmtree(path, True)
 
 
-def createBundleFolder(name):
-    makeDirs(f'bundles/{name}')
-
-
-def clean(paths):
-    for path in paths:
-        removeDirectory(path)
-
-
 def selectFromList(choices):
     choices_len = len(choices)
     possible_indicies = list(range(choices_len))
@@ -61,3 +52,7 @@ def selectFromList(choices):
     print(f'Selected: {choices[selected]}')
 
     return choices[selected]
+
+
+def cd(path):
+    os.chdir(path)

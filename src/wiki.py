@@ -28,48 +28,48 @@ def parseKeyTemplate(template):
 
 
 def getKeys(codename, buildid, device):
-    wiki_url = 'https://www.theiphonewiki.com/w/index.php'
-    url = f'{wiki_url}?title={codename}_{buildid}_({device})&action=raw'
+    wiki_url = 'https://theapplewiki.com/index.php'
+    url = f'{wiki_url}?title=Keys:{codename}_{buildid}_({device})&action=raw'
 
     template = readFromURL(url, 's', False)
     key_data = parseKeyTemplate(template)
 
-    data = key_data.get('data')
+    data = key_data['data']
 
     needed_keys = {
-        'ramdisk': [
-            data.get('RestoreRamdisk'),
-            data.get('RestoreRamdiskIV'),
-            data.get('RestoreRamdiskKey')
+        'Restore Ramdisk': [
+            data['RestoreRamdisk'],
+            data['RestoreRamdiskIV'],
+            data['RestoreRamdiskKey']
         ],
         'iBSS': [
-            data.get('iBSS'),
-            data.get('iBSSIV'),
-            data.get('iBSSKey')
+            data['iBSS'],
+            data['iBSSIV'],
+            data['iBSSKey']
         ],
         'iBEC': [
-            data.get('iBEC'),
-            data.get('iBECIV'),
-            data.get('iBECKey')
+            data['iBEC'],
+            data['iBECIV'],
+            data['iBECKey']
         ],
         'LLB': [
-            data.get('LLB'),
-            data.get('LLBIV'),
-            data.get('LLBKey')
+            data['LLB'],
+            data['LLBIV'],
+            data['LLBKey']
         ],
         'iBoot': [
-            data.get('iBoot'),
-            data.get('iBootIV'),
-            data.get('iBootKey')
+            data['iBoot'],
+            data['iBootIV'],
+            data['iBootKey']
         ],
         'RootFS': [
-            data.get('RootFS'),
-            data.get('RootFSKey')
+            data['RootFS'],
+            data['RootFSKey']
         ],
-        'kernelcache': [
-            data.get('Kernelcache'),
-            data.get('KernelcacheIV'),
-            data.get('KernelcacheKey')
+        'KernelCache': [
+            data['Kernelcache'],
+            data['KernelcacheIV'],
+            data['KernelcacheKey']
         ]
     }
 
