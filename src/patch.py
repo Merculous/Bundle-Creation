@@ -23,7 +23,7 @@ def patchiBoot(files, version):
 
             boot_args = [
                 'nand-enable-reformat=1',
-                'rd=m0',
+                'rd=md0',
                 '-v',
                 'debug=0x14e',
                 'serial=3',
