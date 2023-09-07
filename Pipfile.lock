@@ -126,12 +126,12 @@
         },
         "pykernelpatch": {
             "hashes": [
-                "sha256:f7cc7a0e54083a227b5ec2aadcafcec46a6147cdd9c69e2cfbbe432fd1e17d85",
-                "sha256:fcb29c979ce0c1cd53afd6405614f232039c5fb720a60ec8a3fadceb68578cb5"
+                "sha256:652ac12f1d63f3e501e0fee3e8ed827a8a25ed6a05ebee57fb57ccc729c4566d",
+                "sha256:9936d40f737ed9248998ef922ead95e0dc68440f33ccfd96cc567ac4e9da1bbe"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.7' and python_version < '4.0'",
-            "version": "==1.0.3"
+            "version": "==1.0.4"
         }
     },
     "develop": {}
