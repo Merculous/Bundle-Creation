@@ -1,5 +1,5 @@
 
-from .command import runDmg, run7zip
+from .command import run7zip, runDmg, runHdutil
 from .file import getFileSize
 
 
@@ -31,3 +31,62 @@ def getRootFSInfo(files):
     files['RootFS']['mount_name'] = mount_name
 
     return files
+
+
+def hdutilList(dmg, path):
+    cmd = (
+        dmg,
+        'ls',
+        path
+    )
+    return runHdutil(cmd)
+
+
+def hdutilExtract(dmg, src, dst):
+    cmd = (
+        dmg,
+        'extract',
+        src,
+        dst
+    )
+    return runHdutil(cmd)
+
+# asr usr/sbin/asr
+
+
+def hdutilRemovePath(dmg, path):
+    cmd = (
+        dmg,
+        'rm',
+        path
+    )
+    return runHdutil(cmd)
+
+
+def hdutilGrow(dmg, size):
+    cmd = (
+        dmg,
+        'grow',
+        str(size)
+    )
+    return runHdutil(cmd)
+
+
+def hdutilAdd(dmg, src, dst):
+    cmd = (
+        dmg,
+        'add',
+        src,
+        dst
+    )
+    return runHdutil(cmd)
+
+
+def hdutilChmod(dmg, mode, path):
+    cmd = (
+        dmg,
+        'chmod',
+        str(mode),
+        path
+    )
+    return runHdutil(cmd)

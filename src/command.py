@@ -83,3 +83,19 @@ def runXpwntool(args):
         *args
     )
     return runShellCommand(cmd)
+
+
+def runHdutil(args):
+    cmd = (
+        'bin/hdutil',
+        *args
+    )
+    return runShellCommand(cmd)
+
+
+def runLdid(args):
+    cmd = (
+        'bin/ldid',
+        *args
+    )
+    return runCommand(cmd)
