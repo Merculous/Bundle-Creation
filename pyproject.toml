@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "bundle-creation"
+version = "1.0"
+description = "Python wrapper for xpwn, with ipsw making"
+authors = ["Merculous <24739823+Merculous@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "bundle_creation"}]
+
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pykernelpatch = "^1.0.7"
+bsdiff4 = "^1.2.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -50,7 +50,7 @@ def getWorkingDirReady(zip_fd):
     return working_dir
 
 
-def makeBundle(ipsw):
+def makeBundle(ipsw, applelogo=None, recovery=None):
     with Archive(ipsw) as zip_r:
         info = getIpswInfo(zip_r)
         working_dir = getWorkingDirReady(zip_r)

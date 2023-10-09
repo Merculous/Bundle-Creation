@@ -117,3 +117,11 @@ def patchRamdisk(patches, working_dir):
     moveFileToPath(dmg_renamed, patched)
 
     return patched
+
+
+def patchAppleLogo(files):
+    pass
+
+
+def patchRecovery(file):
+    pass

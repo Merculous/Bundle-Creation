@@ -39,8 +39,8 @@ def getKeys(codename, buildid, device):
     needed_keys = {
         'Restore Ramdisk': [
             data['RestoreRamdisk'],
-            data['RestoreRamdiskIV'],
-            data['RestoreRamdiskKey']
+            data.get('RestoreRamdiskIV', ''),  # Can be unencrypted
+            data.get('RestoreRamdiskKey', '')
         ],
         'iBSS': [
             data['iBSS'],

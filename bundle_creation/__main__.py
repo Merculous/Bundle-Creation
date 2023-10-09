@@ -11,6 +11,8 @@ def main():
     parser.add_argument('--device', nargs=1)
     parser.add_argument('--version', nargs=1)
     parser.add_argument('--ipsw', nargs=1)
+    parser.add_argument('--bootlogo', nargs=1)
+    parser.add_argument('--recovery', nargs=1)
     parser.add_argument('--download', action='store_true')
     parser.add_argument('--make', action='store_true')
 

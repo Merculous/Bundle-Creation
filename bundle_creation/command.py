@@ -99,3 +99,11 @@ def runLdid(args):
         *args
     )
     return runCommand(cmd)
+
+
+def runImagetool(args):
+    cmd = (
+        'bin/imagetool',
+        *args
+    )
+    return runCommand(cmd)

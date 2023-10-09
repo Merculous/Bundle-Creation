@@ -22,5 +22,9 @@
     "xpwntool": {
         "required": true,
         "exists": false
+    },
+    "imagetool": {
+        "required": false,
+        "exists": false
     }
 }
