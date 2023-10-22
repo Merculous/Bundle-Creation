@@ -6,7 +6,7 @@ import bsdiff4
 from .command import runLdid
 from .dmg import (hdutilAdd, hdutilChmod, hdutilExtract, hdutilGrow,
                   hdutilRemovePath)
-from .file import copyFileToPath, getFileSize, moveFileToPath, removeFile
+from .file import copyFileToPath, getFileSize, moveFileToPath, removeFile, writeBinaryFile
 from .iboot import useiBoot32Patcher
 from .kernel import applyRestorePatches
 from .ramdisk import patchASR, patchRestoredExternal
@@ -83,12 +83,20 @@ def patchRamdisk(ramdisk, working_dir):
     copyFileToPath(ramdisk, dmg_renamed)
 
     # hdutilExtract(dmg_renamed, str(asr), working_asr)
-    # patchASR(working_asr)
+
+    # asr_patched_data = patchASR(working_asr)
+
+    # writeBinaryFile(asr_patched_data, working_asr)
+
     # runLdid(('-S', working_asr))
     # hdutilRemovePath(dmg_renamed, str(asr))
 
     hdutilExtract(dmg_renamed, str(rde), working_rde)
-    patchRestoredExternal(working_rde)
+
+    rde_patched_data = patchRestoredExternal(working_rde)
+
+    writeBinaryFile(rde_patched_data, working_rde)
+
     # runLdid(('-S', working_rde))
     hdutilRemovePath(dmg_renamed, str(rde))
 
