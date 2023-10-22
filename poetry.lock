@@ -130,24 +130,24 @@ files = [
 
 [[package]]
 name = "pybinpatch"
-version = "1.0"
+version = "1.0.1"
 description = "Binary diff and patch lib"
 optional = false
 python-versions = ">=3.11,<4.0"
 files = [
-    {file = "pybinpatch-1.0-py3-none-any.whl", hash = "sha256:f7e56c1a4eb82dc3d279c0eca935d4fd6edd74f17618e53ee33f5d708714cc0d"},
-    {file = "pybinpatch-1.0.tar.gz", hash = "sha256:9bfa6129e04c52edf2a3c11f9ddf65e1e4551ab477003431664b543a08a421f0"},
+    {file = "pybinpatch-1.0.1-py3-none-any.whl", hash = "sha256:28747c66559e78dba1d911e5a7e1941c855458ad530b7acadcf5cbfc4ff8ac60"},
+    {file = "pybinpatch-1.0.1.tar.gz", hash = "sha256:75e5ee726a03080170dc7e8e7628f5721a49b3e40a370387278fe5415bd53818"},
 ]
 
 [[package]]
 name = "pykernelpatch"
-version = "1.0.8"
+version = "1.0.9"
 description = "iOS kernelcache patcher"
 optional = false
 python-versions = ">=3.11,<4.0"
 files = [
-    {file = "pykernelpatch-1.0.8-py3-none-any.whl", hash = "sha256:6836e9fbf113618b83d39ab3230ef7b0f8b8e435ddf66030977335d1f7b775a7"},
-    {file = "pykernelpatch-1.0.8.tar.gz", hash = "sha256:0c536a557ccf47ae4b0603637b5ad5214dddc5ab333b56f1eb080680bf5a8585"},
+    {file = "pykernelpatch-1.0.9-py3-none-any.whl", hash = "sha256:39f87112028511b348f25d1ed8cf4d5f17f5e8776d1d943e7bde6831a2d3465d"},
+    {file = "pykernelpatch-1.0.9.tar.gz", hash = "sha256:6f58a7d445380c68c1083f9163891650b41f2de8ad956579a7ece7904f21c8c2"},
 ]
 
 [package.dependencies]

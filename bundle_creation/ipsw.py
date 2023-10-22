@@ -139,50 +139,27 @@ def makeIpsw(ipsw):
 
                 patchFile(file_path, patch_path)
 
-    # Apply ramdisk patches if asr.patch or restored_external.patch exist
+    if version.startswith('6'):
+        ramdisk = patches['Restore Ramdisk']
+        iv = ramdisk['IV']
+        key = ramdisk['Key']
 
-    ramdisk = patches['Restore Ramdisk']
-
-    ramdisk_patches = {
-        'asr': None,
-        'restored_external': None,
-        'ramdisk': ramdisk['File'],
-        'iv': ramdisk['IV'],
-        'key': ramdisk['Key']
-    }
-
-    patch_ramdisk = False
-
-    for path in listDir('*.patch', match):
-        if path.name == 'asr.patch':
-            ramdisk_patches['asr'] = path
-            if patch_ramdisk is False:
-                patch_ramdisk = True
-
-        if path.name == 'restored_external.patch':
-            ramdisk_patches['restored_external'] = path
-            if patch_ramdisk is False:
-                patch_ramdisk = True
-
-    if patch_ramdisk:
-        ramdisk_name = ramdisk_patches['ramdisk']
-
-        working_ramdisk = f'{working_dir}/{ramdisk_name}'
+        working_ramdisk = f'{working_dir}/{ramdisk["File"]}'
 
         decrypted = f'{working_ramdisk}.decrypted'
 
-        decryptXpwn(working_ramdisk, decrypted, ramdisk_patches['iv'], ramdisk_patches['key'])
+        decryptXpwn(working_ramdisk, decrypted, iv, key)
 
-        patched = patchRamdisk(ramdisk_patches, working_dir)
+        patched = patchRamdisk(decrypted, working_dir)
 
         packed = f'{patched}.packed'
 
-        pack(patched, packed, working_ramdisk, ramdisk_patches['iv'], ramdisk_patches['key'])
+        pack(patched, packed, working_ramdisk, iv, key)
+
+        moveFileToPath(packed, working_ramdisk)
 
         removeFile(decrypted)
         removeFile(patched)
-
-        moveFileToPath(packed, working_ramdisk)
 
     new_ipsw = ipsw.replace('Restore', 'Custom')
 

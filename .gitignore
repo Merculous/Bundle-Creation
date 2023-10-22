@@ -7,6 +7,8 @@ __pycache__
 venv
 bin
 bundles
+jailbreak
+work
 
 *.ipsw
 *.img3
@@ -24,3 +26,4 @@ Keys.json
 Restore.json
 
 asr
+restored_external

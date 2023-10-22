@@ -15,7 +15,7 @@ def getFileSize(path):
 
 def readBinaryFile(path):
     with open(path, 'rb') as f:
-        return f.read()
+        return bytearray(f.read())
 
 
 def getFileHash(path):

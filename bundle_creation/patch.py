@@ -9,6 +9,7 @@ from .dmg import (hdutilAdd, hdutilChmod, hdutilExtract, hdutilGrow,
 from .file import copyFileToPath, getFileSize, moveFileToPath, removeFile
 from .iboot import useiBoot32Patcher
 from .kernel import applyRestorePatches
+from .ramdisk import patchASR, patchRestoredExternal
 from .utils import listDir
 
 
@@ -68,34 +69,28 @@ def patchKernel(files):
     return files
 
 
-def patchRamdisk(patches, working_dir):
+def patchRamdisk(ramdisk, working_dir):
     asr = Path('usr/sbin/asr')
-    working_asr = f'{working_dir}/asr'
+    # working_asr = f'{working_dir}/asr'
 
     rde = Path('usr/local/bin/restored_external')
     working_rde = f'{working_dir}/{rde.name}'
-
-    ramdisk = patches['ramdisk']
-
-    working_dmg = f'{working_dir}/{ramdisk}.decrypted'
 
     # Remove ".dmg" from ramdisk cause it matters, seriously
 
     dmg_renamed = f'{working_dir}/ramdisk'
 
-    copyFileToPath(working_dmg, dmg_renamed)
+    copyFileToPath(ramdisk, dmg_renamed)
 
-    if patches['asr']:
-        hdutilExtract(dmg_renamed, str(asr), working_asr)
-        patchFile(working_asr, patches['asr'])
-        # runLdid(('-S', working_asr))
-        hdutilRemovePath(dmg_renamed, str(asr))
+    # hdutilExtract(dmg_renamed, str(asr), working_asr)
+    # patchASR(working_asr)
+    # runLdid(('-S', working_asr))
+    # hdutilRemovePath(dmg_renamed, str(asr))
 
-    if patches['restored_external']:
-        hdutilExtract(dmg_renamed, str(rde), working_rde)
-        patchFile(working_rde, patches['restored_external'])
-        # runLdid(('-S', working_rde))
-        hdutilRemovePath(dmg_renamed, str(rde))
+    hdutilExtract(dmg_renamed, str(rde), working_rde)
+    patchRestoredExternal(working_rde)
+    # runLdid(('-S', working_rde))
+    hdutilRemovePath(dmg_renamed, str(rde))
 
     grow_size = getFileSize(dmg_renamed) + 6_000_00
 
@@ -112,7 +107,7 @@ def patchRamdisk(patches, working_dir):
             hdutilChmod(dmg_renamed, 100755, str(rde))
             removeFile(path)
 
-    patched = f'{working_dmg}.patched'
+    patched = f'{ramdisk}.patched'
 
     moveFileToPath(dmg_renamed, patched)
 
