@@ -141,18 +141,18 @@ files = [
 
 [[package]]
 name = "pykernelpatch"
-version = "1.0.9"
+version = "1.1.0"
 description = "iOS kernelcache patcher"
 optional = false
 python-versions = ">=3.11,<4.0"
 files = [
-    {file = "pykernelpatch-1.0.9-py3-none-any.whl", hash = "sha256:39f87112028511b348f25d1ed8cf4d5f17f5e8776d1d943e7bde6831a2d3465d"},
-    {file = "pykernelpatch-1.0.9.tar.gz", hash = "sha256:6f58a7d445380c68c1083f9163891650b41f2de8ad956579a7ece7904f21c8c2"},
+    {file = "pykernelpatch-1.1.0-py3-none-any.whl", hash = "sha256:8385d9f4aec445847643b245332bd9cf5749eae6d969c47b4d49f220d1d21395"},
+    {file = "pykernelpatch-1.1.0.tar.gz", hash = "sha256:dcbc2104d620fb18120eb95aa234411caaba9bb951ed78ff3f2498f8b60ff584"},
 ]
 
 [package.dependencies]
 capstone = ">=5.0.1,<6.0.0"
-pybinpatch = ">=1.0,<2.0"
+pybinpatch = ">=1.0.1,<2.0.0"
 
 [metadata]
 lock-version = "2.0"
