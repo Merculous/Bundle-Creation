@@ -1,4 +1,6 @@
 
+import plistlib
+
 from .file import readBinaryFile
 
 from binpatch.find import find
@@ -6,6 +8,9 @@ from binpatch.patch import patchBufferAtIndex
 
 
 def patchTicketUpdate(data):
+    # FIXME
+    # This doesn't work on 6.0
+
     pattern = b'\x06\xf0\x30\xf8\xb0\xb9'
 
     patch = b'\x00\x00\x00\x00\x16\xe0'
@@ -63,3 +68,16 @@ def patchASR(path):
     patchImageVerification(data)
 
     return data
+
+
+def updateOptions(optionsPath):
+    with open(optionsPath, 'rb+') as f:
+        data = plistlib.load(f)
+
+        data['UpdateBaseband'] = False
+
+        # data['CreateFilesystemPartitions'] = True
+
+        # data['SystemPartitionSize'] += 50
+
+        plistlib.dump(data, f)

@@ -9,7 +9,7 @@ from .dmg import (hdutilAdd, hdutilChmod, hdutilExtract, hdutilGrow,
 from .file import copyFileToPath, getFileSize, moveFileToPath, removeFile, writeBinaryFile
 from .iboot import useiBoot32Patcher
 from .kernel import applyRestorePatches
-from .ramdisk import patchASR, patchRestoredExternal
+from .ramdisk import patchASR, patchRestoredExternal, updateOptions
 from .utils import listDir
 
 
@@ -69,7 +69,7 @@ def patchKernel(files):
     return files
 
 
-def patchRamdisk(ramdisk, working_dir):
+def patchRamdisk(version, board, ramdisk, working_dir):
     asr = Path('usr/sbin/asr')
     # working_asr = f'{working_dir}/asr'
 
@@ -82,38 +82,68 @@ def patchRamdisk(ramdisk, working_dir):
 
     copyFileToPath(ramdisk, dmg_renamed)
 
-    # hdutilExtract(dmg_renamed, str(asr), working_asr)
-
-    # asr_patched_data = patchASR(working_asr)
-
-    # writeBinaryFile(asr_patched_data, working_asr)
-
-    # runLdid(('-S', working_asr))
-    # hdutilRemovePath(dmg_renamed, str(asr))
-
-    hdutilExtract(dmg_renamed, str(rde), working_rde)
-
-    rde_patched_data = patchRestoredExternal(working_rde)
-
-    writeBinaryFile(rde_patched_data, working_rde)
-
-    # runLdid(('-S', working_rde))
-    hdutilRemovePath(dmg_renamed, str(rde))
-
-    grow_size = getFileSize(dmg_renamed) + 6_000_00
+    grow_size = getFileSize(dmg_renamed) + 4_920_00
 
     hdutilGrow(dmg_renamed, grow_size)
 
-    for path in listDir('*', working_dir):
-        if path.name == 'asr':
-            hdutilAdd(dmg_renamed, str(path), str(asr))
-            hdutilChmod(dmg_renamed, 100755, str(asr))
-            removeFile(path)
+    # /usr/local/share/restore/options.(n88).plist
 
-        if path.name == 'restored_external':
-            hdutilAdd(dmg_renamed, str(path), str(rde))
-            hdutilChmod(dmg_renamed, 100755, str(rde))
-            removeFile(path)
+    optionsPath = Path('/usr/local/share/restore/options.plist')
+    working_options = f'{working_dir}/{optionsPath.name}'
+
+    print(f'Trying to read from {optionsPath}. This may fail!')
+
+    hdutilExtract(dmg_renamed, str(optionsPath), working_options)
+
+    # Some options.plist include the board in the name
+
+    optionsPathExists = True if getFileSize(working_options) != 0 else False
+
+    if optionsPathExists is False:
+        optionsPath = Path(str(optionsPath).replace('options', f'options.{board[:-2]}'))
+        working_options = f'{working_dir}/{optionsPath.name}'
+
+        print(f'Plain options.plist does not exist! Trying {optionsPath}...')
+
+        hdutilExtract(dmg_renamed, str(optionsPath), working_options)
+
+    try:
+        updateOptions(working_options)
+    except FileNotFoundError:
+        print('Weird. A options.plist does not exist. Continue anyway...')
+    else:
+        hdutilAdd(dmg_renamed, str(working_options), str(optionsPath))
+        removeFile(working_options)
+
+    if version.startswith('6'):
+        # hdutilExtract(dmg_renamed, str(asr), working_asr)
+
+        # asr_patched_data = patchASR(working_asr)
+
+        # writeBinaryFile(asr_patched_data, working_asr)
+
+        # runLdid(('-S', working_asr))
+        # hdutilRemovePath(dmg_renamed, str(asr))
+
+        hdutilExtract(dmg_renamed, str(rde), working_rde)
+
+        rde_patched_data = patchRestoredExternal(working_rde)
+
+        writeBinaryFile(rde_patched_data, working_rde)
+
+        # runLdid(('-S', working_rde))
+        hdutilRemovePath(dmg_renamed, str(rde))
+
+        for path in listDir('*', working_dir):
+            if path.name == 'asr':
+                hdutilAdd(dmg_renamed, str(path), str(asr))
+                hdutilChmod(dmg_renamed, 100755, str(asr))
+                removeFile(path)
+
+            if path.name == 'restored_external':
+                hdutilAdd(dmg_renamed, str(path), str(rde))
+                hdutilChmod(dmg_renamed, 100755, str(rde))
+                removeFile(path)
 
     patched = f'{ramdisk}.patched'
 

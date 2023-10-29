@@ -139,27 +139,26 @@ def makeIpsw(ipsw):
 
                 patchFile(file_path, patch_path)
 
-    if version.startswith('6'):
-        ramdisk = patches['Restore Ramdisk']
-        iv = ramdisk['IV']
-        key = ramdisk['Key']
+    ramdisk = patches['Restore Ramdisk']
+    iv = ramdisk['IV']
+    key = ramdisk['Key']
 
-        working_ramdisk = f'{working_dir}/{ramdisk["File"]}'
+    working_ramdisk = f'{working_dir}/{ramdisk["File"]}'
 
-        decrypted = f'{working_ramdisk}.decrypted'
+    decrypted = f'{working_ramdisk}.decrypted'
 
-        decryptXpwn(working_ramdisk, decrypted, iv, key)
+    decryptXpwn(working_ramdisk, decrypted, iv, key)
 
-        patched = patchRamdisk(decrypted, working_dir)
+    patched = patchRamdisk(version, board, decrypted, working_dir)
 
-        packed = f'{patched}.packed'
+    packed = f'{patched}.packed'
 
-        pack(patched, packed, working_ramdisk, iv, key)
+    pack(patched, packed, working_ramdisk, iv, key)
 
-        moveFileToPath(packed, working_ramdisk)
+    moveFileToPath(packed, working_ramdisk)
 
-        removeFile(decrypted)
-        removeFile(patched)
+    removeFile(decrypted)
+    removeFile(patched)
 
     new_ipsw = ipsw.replace('Restore', 'Custom')
 
