@@ -1,10 +1,10 @@
 # prerequisites
 
-<s>asrpatch: https://github.com/cfw-project/asr_patcher-2</s>\
-dmg: xpwn\
-hdutil: xpwn\
-iBoot32Patcher: https://github.com/Merculous/iBoot32Patcher\
-xpwntool: xpwn\
+<s>asrpatch: https://github.com/cfw-project/asr_patcher-2</s> \
+dmg: xpwn \
+hdutil: xpwn \
+iBoot32Patcher: https://github.com/Merculous/iBoot32Patcher \
+xpwntool: xpwn \
 7zip: this is for getting the mount name for the rootfs
 
 Put the binaries or symlink inside a folder called `bin` (it must be inside this projects folder)
