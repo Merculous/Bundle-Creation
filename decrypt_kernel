@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+
+from argparse import ArgumentParser
+
+from bundle_creation.archive import Archive
+from bundle_creation.file import removeFile
+from bundle_creation.ipsw import getIpswInfo
+from bundle_creation.wiki import getKeys
+from bundle_creation.xpwntool import decryptXpwn
+
+
+def main():
+    parser = ArgumentParser()
+
+    parser.add_argument('-i', nargs=1, metavar='IPSW')
+
+    args = parser.parse_args()
+
+    if args.i:
+        with Archive(args.i[0]) as f:
+            paths = f._listPaths()
+
+            for path in paths:
+                if path.filename.startswith('kernelcache'):
+                    f._extractPath(path, None)
+                    break
+
+            info = getIpswInfo(f)
+
+        codename = info['codename']
+        buildid = info['buildid']
+        device = info['device']
+
+        keys = getKeys(codename, buildid, device)['KernelCache']
+
+        name, iv, key = keys
+
+        decryptXpwn(name, f'{name}.decrypted', iv, key)
+
+        removeFile(name)
+
+    else:
+        parser.print_help()
+
+
+if __name__ == '__main__':
+    main()
