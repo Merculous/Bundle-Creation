@@ -3,41 +3,65 @@
 from argparse import ArgumentParser
 
 from bundle_creation.archive import Archive
-from bundle_creation.file import removeFile
+from bundle_creation.file import removeFile, writeBinaryFile
 from bundle_creation.ipsw import getIpswInfo
 from bundle_creation.wiki import getKeys
 from bundle_creation.xpwntool import decryptXpwn
 
 
+def extractKernelFromIPSW(archive, name):
+    data, kernel = None, None
+
+    for path in archive._listPaths():
+        if path.filename.startswith('kernelcache'):
+            kernel = path
+            data = archive._readPath(kernel)
+
+    if data:
+        writeBinaryFile(data, name)
+    else:
+        raise Exception('Got here!')
+
+
+def getValuesForKeys(archive):
+    manifest = getIpswInfo(archive)
+
+    values = (
+        manifest['codename'],
+        manifest['buildid'],
+        manifest['device']
+    )
+
+    return values
+
+
 def main():
     parser = ArgumentParser()
 
-    parser.add_argument('-i', nargs=1, metavar='IPSW')
+    parser.add_argument('--orig', nargs=1, metavar='IPSW', help='unpatched')
+    parser.add_argument('--patched', nargs=1, metavar='IPSW', help='patched')
 
     args = parser.parse_args()
 
-    if args.i:
-        with Archive(args.i[0]) as f:
-            paths = f._listPaths()
+    if args.orig and args.patched:
+        work_paths = ('kernelcache.orig', 'kernelcache.patched')
 
-            for path in paths:
-                if path.filename.startswith('kernelcache'):
-                    f._extractPath(path, None)
-                    break
+        with Archive(args.orig[0]) as o:
+            values = getValuesForKeys(o)
 
-            info = getIpswInfo(f)
+            extractKernelFromIPSW(o, work_paths[0])
 
-        codename = info['codename']
-        buildid = info['buildid']
-        device = info['device']
+        with Archive(args.patched[0]) as p:
+            extractKernelFromIPSW(p, work_paths[1])
 
-        keys = getKeys(codename, buildid, device)['KernelCache']
+        keys = getKeys(*values)['KernelCache']
 
         name, iv, key = keys
 
-        decryptXpwn(name, f'{name}.decrypted', iv, key)
+        for path in work_paths:
+            decryptXpwn(path, f'{path}.decrypted', iv, key)
 
-        removeFile(name)
+            removeFile(path)
 
     else:
         parser.print_help()
