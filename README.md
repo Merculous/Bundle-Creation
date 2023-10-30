@@ -95,8 +95,8 @@ are amazing people. If you know if contributed in making this work public, thank
 
 iPhone2,1
 
-    - 4.3.x: WIP
+    - 4.3.x: Tested and fully working
 
-    - 5.x: Testing and fully working
+    - 5.x: Tested and fully working
 
-    - 6.x: WIP
+    - 6.x: Tested and fully working
