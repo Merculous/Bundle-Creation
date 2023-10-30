@@ -8,16 +8,25 @@ from binpatch.patch import patchBufferAtIndex
 
 
 def patchTicketUpdate(data):
-    # FIXME
-    # This doesn't work on 6.0
-
     pattern = b'\x06\xf0\x30\xf8\xb0\xb9'
 
     patch = b'\x00\x00\x00\x00\x16\xe0'
 
-    print('[#] ticket update')
+    name = '_ramrod_ticket_update'
+
+    print(f'[#] {name}')
 
     offset = find(pattern, data)
+
+    if offset is None:
+        print(f'Failed to find {name}. Using new pattern...')
+
+        pattern = pattern.replace(b'\x30', b'\x1e')
+
+        offset = find(pattern, data)
+
+        if offset is None:
+            raise Exception(f'Still cannot find {name}! Exiting!')
 
     patchBufferAtIndex(data, offset, pattern, patch)
 
