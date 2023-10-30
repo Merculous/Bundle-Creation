@@ -44,14 +44,17 @@ def patchiBoot(files, version):
                 else:
                     useiBoot32Patcher(decrypted, patched)
 
-            elif name == iBoot[1]:  # iBEC
-                useiBoot32Patcher(decrypted, patched, boot_args)
+            if name == iBoot[1]:  # iBEC
+                if base_version == 3 or base_version == 4:
+                    useiBoot32Patcher(decrypted, patched, boot_args[2:])
+                else:
+                    useiBoot32Patcher(decrypted, patched, boot_args)
 
-            elif name == iBoot[3]:  # iBoot
-                useiBoot32Patcher(decrypted, patched, boot_args[2:])
-
-            else:  # LLB
+            if name == iBoot[2]:  # LLB
                 useiBoot32Patcher(decrypted, patched)
+
+            if name == iBoot[3]:  # iBoot
+                useiBoot32Patcher(decrypted, patched, boot_args[2:])
 
             files[name]['patched'] = Path(patched)
 
@@ -117,16 +120,20 @@ def patchRamdisk(version, board, ramdisk, working_dir):
         hdutilAdd(dmg_renamed, str(working_options), str(optionsPath))
         removeFile(working_options)
 
+    # asr
+
+    hdutilExtract(dmg_renamed, str(asr), working_asr)
+
+    asr_patched_data = patchASR(working_asr)
+
+    writeBinaryFile(asr_patched_data, working_asr)
+
+    runLdid(('-S', working_asr))
+    hdutilRemovePath(dmg_renamed, str(asr))
+
+    # restored_external
+
     if version.startswith('6'):
-        hdutilExtract(dmg_renamed, str(asr), working_asr)
-
-        asr_patched_data = patchASR(working_asr)
-
-        writeBinaryFile(asr_patched_data, working_asr)
-
-        runLdid(('-S', working_asr))
-        hdutilRemovePath(dmg_renamed, str(asr))
-
         hdutilExtract(dmg_renamed, str(rde), working_rde)
 
         rde_patched_data = patchRestoredExternal(working_rde)
@@ -136,16 +143,16 @@ def patchRamdisk(version, board, ramdisk, working_dir):
         # runLdid(('-S', working_rde))
         hdutilRemovePath(dmg_renamed, str(rde))
 
-        for path in listDir('*', working_dir):
-            if path.name == 'asr':
-                hdutilAdd(dmg_renamed, str(path), str(asr))
-                hdutilChmod(dmg_renamed, 100755, str(asr))
-                removeFile(path)
+    for path in listDir('*', working_dir):
+        if path.name == 'asr':
+            hdutilAdd(dmg_renamed, str(path), str(asr))
+            hdutilChmod(dmg_renamed, 100755, str(asr))
+            removeFile(path)
 
-            if path.name == 'restored_external':
-                hdutilAdd(dmg_renamed, str(path), str(rde))
-                hdutilChmod(dmg_renamed, 100755, str(rde))
-                removeFile(path)
+        if path.name == 'restored_external':
+            hdutilAdd(dmg_renamed, str(path), str(rde))
+            hdutilChmod(dmg_renamed, 100755, str(rde))
+            removeFile(path)
 
     patched = f'{ramdisk}.patched'
 

@@ -1,7 +1,6 @@
 
-import plistlib
-
 from .file import readBinaryFile
+from .plist import readPlistFile, writePlistFile
 
 from binpatch.find import find
 from binpatch.patch import patchBufferAtIndex
@@ -62,9 +61,23 @@ def patchImageVerification(data):
 
     patch = b'\xf4\xe7\x6a\x30'
 
-    print('[#] image verification')
+    name = 'image verification'
+
+    print(f'[#] {name}')
 
     offset = find(pattern, data)
+
+    if offset is None:
+        print(f'Failed to find {name}. Using new pattern...')
+
+        pattern = b'\xdf\xf8\xe0\x00'
+
+        patch = b'\xfd\xe7\xe0\x00'
+
+        offset = find(pattern, data)
+
+        if offset is None:
+            raise Exception(f'Still cannot find {name}! Exiting!')
 
     patchBufferAtIndex(data, offset, pattern, patch)
 
@@ -80,13 +93,8 @@ def patchASR(path):
 
 
 def updateOptions(optionsPath):
-    with open(optionsPath, 'rb+') as f:
-        data = plistlib.load(f)
+    options = readPlistFile(optionsPath)
 
-        data['UpdateBaseband'] = False
+    options['UpdateBaseband'] = False
 
-        # data['CreateFilesystemPartitions'] = True
-
-        # data['SystemPartitionSize'] += 50
-
-        plistlib.dump(data, f)
+    writePlistFile(options, optionsPath)
