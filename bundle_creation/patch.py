@@ -100,6 +100,8 @@ def patchRamdisk(version, board, ramdisk, working_dir):
     optionsPathExists = True if getFileSize(working_options) != 0 else False
 
     if optionsPathExists is False:
+        removeFile(working_options)
+
         optionsPath = Path(str(optionsPath).replace('options', f'options.{board[:-2]}'))
         working_options = f'{working_dir}/{optionsPath.name}'
 

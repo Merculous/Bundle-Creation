@@ -4,7 +4,7 @@ from pathlib import Path
 from .archive import Archive
 from .decrypt import decryptFiles
 from .diff import makePatchFiles
-from .dmg import getRootFSInfo
+from .dmg import getRootFSInfo, decryptDmg, buildRootFS
 from .encrypt import packFiles
 from .file import getFileHash, moveFileToPath, removeFile
 from .patch import patchFile, patchiBoot, patchKernel, patchRamdisk
@@ -159,6 +159,30 @@ def makeIpsw(ipsw):
 
     removeFile(decrypted)
     removeFile(patched)
+
+    # Gotta do the FS stuff below otherwise idevicerestore won't work.
+    # Also idevicerestore must be on a version where it extracts the
+    # filesystem, or is in a path where the filesytem and the rest
+    # of the ipsw contents are located. I found this out the very
+    # hard way. Literally took around 2 months just to figure this out...
+
+    fs = info_plist['RootFilesystem']
+    fs_key = info_plist['RootFilesystemKey']
+
+    working_fs = Path(f'{working_dir}/{fs}')
+
+    decrypted_fs = Path(f'{working_dir}/rootfs.dmg')
+
+    decryptDmg(str(working_fs), str(decrypted_fs), fs_key)
+
+    fs_built = Path(f'{working_dir}/built_fs.dmg')
+
+    buildRootFS(str(decrypted_fs), str(fs_built))
+
+    removeFile(working_fs)
+    removeFile(decrypted_fs)
+
+    moveFileToPath(fs_built, working_fs)
 
     new_ipsw = ipsw.replace('Restore', 'Custom')
 

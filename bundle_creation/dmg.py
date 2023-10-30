@@ -14,6 +14,16 @@ def decryptDmg(src, dst, key):
     return runDmg(cmd)
 
 
+def buildRootFS(src, dst):
+    cmd = (
+        'build',
+        src,
+        dst
+    )
+
+    return runDmg(cmd)
+
+
 def getRootFSInfo(files):
     decrypted = files['RootFS']['decrypted']
 
