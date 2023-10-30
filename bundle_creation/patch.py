@@ -71,7 +71,7 @@ def patchKernel(files):
 
 def patchRamdisk(version, board, ramdisk, working_dir):
     asr = Path('usr/sbin/asr')
-    # working_asr = f'{working_dir}/asr'
+    working_asr = f'{working_dir}/asr'
 
     rde = Path('usr/local/bin/restored_external')
     working_rde = f'{working_dir}/{rde.name}'
@@ -82,7 +82,7 @@ def patchRamdisk(version, board, ramdisk, working_dir):
 
     copyFileToPath(ramdisk, dmg_renamed)
 
-    grow_size = getFileSize(dmg_renamed) + 4_920_00
+    grow_size = getFileSize(dmg_renamed) + 6_000_00
 
     hdutilGrow(dmg_renamed, grow_size)
 
@@ -118,14 +118,14 @@ def patchRamdisk(version, board, ramdisk, working_dir):
         removeFile(working_options)
 
     if version.startswith('6'):
-        # hdutilExtract(dmg_renamed, str(asr), working_asr)
+        hdutilExtract(dmg_renamed, str(asr), working_asr)
 
-        # asr_patched_data = patchASR(working_asr)
+        asr_patched_data = patchASR(working_asr)
 
-        # writeBinaryFile(asr_patched_data, working_asr)
+        writeBinaryFile(asr_patched_data, working_asr)
 
-        # runLdid(('-S', working_asr))
-        # hdutilRemovePath(dmg_renamed, str(asr))
+        runLdid(('-S', working_asr))
+        hdutilRemovePath(dmg_renamed, str(asr))
 
         hdutilExtract(dmg_renamed, str(rde), working_rde)
 
