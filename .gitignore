@@ -6,7 +6,6 @@ __pycache__
 
 venv
 bin
-bundles
 jailbreak
 work
 ipsw
@@ -18,7 +17,6 @@ ipsw
 *.decrypted
 *.patched
 *.packed
-*.txt
 *.pyc
 
 kernelcache.*

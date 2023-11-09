@@ -1,0 +1,13 @@
+
+Add a check when --make --ipsw is being used (ipsw making), we don't decrypt the FS twice.
+
+Move ramdisk patching when creating bundles, or wherever it can fit in. While I patch ASR
+and restored_external when only making ipsw's, its still needed for all versions essentially.
+Also, create .patch files to utilize already patched ASR/restored_external so that I don't have
+to find offsets again. This will also allow xpwn (ipsw binary) to make use of the patches. I'm
+not too sure whether it will grow the ramdisk, but I think I can set the size, but I haven't
+messed with ramdisk patching from xpwn only yet.
+
+Add Cydia support. This will require adding untether debs.
+
+Figure out how to patch restored_external/kernel regarding NOR for 3.x.
