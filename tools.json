@@ -3,16 +3,12 @@
         "required": true,
         "exists": false
     },
-    "asrpatch": {
-        "required": false,
-        "exists": false
-    },
     "dmg": {
         "required": true,
         "exists": false
     },
     "hdutil": {
-        "required": false,
+        "required": true,
         "exists": false
     },
     "iBoot32Patcher": {
