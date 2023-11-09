@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 
 from .ipsw import makeBundle, makeIpsw
 from .ipsw_me import downloadArchive, getBuildidForVersion
+from .utils import binCheck
 
 
 def main():
@@ -19,6 +20,8 @@ def main():
     args = parser.parse_args()
 
     if args.ipsw:
+        binCheck()
+
         if args.make:
             makeIpsw(args.ipsw[0])
         else:
