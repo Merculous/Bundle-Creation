@@ -1,11 +1,11 @@
 # prerequisites
 
-<s>asrpatch: https://github.com/cfw-project/asr_patcher-2</s> \
 dmg: xpwn \
 hdutil: xpwn \
 iBoot32Patcher: https://github.com/Merculous/iBoot32Patcher \
 xpwntool: xpwn \
-7zip: this is for getting the mount name for the rootfs
+7zip: this is for getting the mount name for the rootfs \
+ldid: https://github.com/ProcursusTeam/ldid
 
 Put the binaries or symlink inside a folder called `bin` (it must be inside this projects folder)
 
@@ -29,13 +29,13 @@ compile iBoot32Patcher:
 
 - just a simple `make` is all you need to do, and then as I said above, copy/move/symlink to `bin`
 
-<s>download asrpatch:</s>
-
-<s>- put inside `bin`</s>
-
 download 7zip
 
 - put inside `bin`
+
+compile ldid
+
+- `make` and then `sudo make install`, then copy/move/symlink to `bin`
 
 # creating bundles
 

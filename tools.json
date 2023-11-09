@@ -22,5 +22,9 @@
     "imagetool": {
         "required": false,
         "exists": false
+    },
+    "ldid": {
+        "required": true,
+        "exists": false
     }
 }
