@@ -97,4 +97,6 @@ def updateOptions(optionsPath):
 
     options['UpdateBaseband'] = False
 
+    options['SystemPartitionSize'] += 30
+
     writePlistFile(options, optionsPath)

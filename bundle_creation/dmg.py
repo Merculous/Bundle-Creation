@@ -61,8 +61,6 @@ def hdutilExtract(dmg, src, dst):
     )
     return runHdutil(cmd)
 
-# asr usr/sbin/asr
-
 
 def hdutilRemovePath(dmg, path):
     cmd = (
@@ -98,5 +96,14 @@ def hdutilChmod(dmg, mode, path):
         'chmod',
         str(mode),
         path
+    )
+    return runHdutil(cmd)
+
+
+def hdutilUntar(dmg, tar):
+    cmd = (
+        dmg,
+        'untar',
+        tar
     )
     return runHdutil(cmd)

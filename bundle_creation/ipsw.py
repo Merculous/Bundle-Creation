@@ -4,9 +4,9 @@ from pathlib import Path
 from .archive import Archive
 from .decrypt import decryptFiles
 from .diff import makePatchFiles
-from .dmg import getRootFSInfo, decryptDmg, buildRootFS
+from .dmg import getRootFSInfo, decryptDmg, buildRootFS, hdutilUntar, hdutilGrow
 from .encrypt import packFiles
-from .file import getFileHash, moveFileToPath, removeFile
+from .file import getFileHash, moveFileToPath, removeFile, getFileSize
 from .patch import patchFile, patchiBoot, patchKernel, patchRamdisk, patchAppleLogo, patchRecovery
 from .plist import getBuildManifestInfo, initInfoPlist, readPlistFile
 from .temp import makeTempDir
@@ -94,7 +94,7 @@ def makeBundle(ipsw, applelogo, recovery):
     removeDirectory(working_dir)
 
 
-def makeIpsw(ipsw, applelogo=None, recovery=None):
+def makeIpsw(ipsw, applelogo=None, recovery=None, untether=None):
     with Archive(ipsw) as t:
         info = getIpswInfo(t)
 
@@ -183,9 +183,16 @@ def makeIpsw(ipsw, applelogo=None, recovery=None):
 
     working_fs = Path(f'{working_dir}/{fs}')
 
-    decrypted_fs = Path(f'{working_dir}/rootfs.dmg')
+    decrypted_fs = Path(f'{working_dir}/rootfs.decrypted')
 
     decryptDmg(str(working_fs), str(decrypted_fs), fs_key)
+
+    if untether:
+        dmg_grow = getFileSize(decrypted_fs) + 25_000_000
+        hdutilGrow(str(decrypted_fs), dmg_grow)
+
+        hdutilUntar(str(decrypted_fs), untether)
+        hdutilUntar(str(decrypted_fs), 'Cydia.tar')
 
     fs_built = Path(f'{working_dir}/built_fs.dmg')
 
