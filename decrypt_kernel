@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser
+from pathlib import Path
 
 from bundle_creation.archive import Archive
 from bundle_creation.file import removeFile, writeBinaryFile
@@ -43,7 +44,7 @@ def main():
 
     args = parser.parse_args()
 
-    if args.orig and args.patched:
+    if args.orig:
         work_paths = ('kernelcache.orig', 'kernelcache.patched')
 
         with Archive(args.orig[0]) as o:
@@ -51,17 +52,19 @@ def main():
 
             extractKernelFromIPSW(o, work_paths[0])
 
-        with Archive(args.patched[0]) as p:
-            extractKernelFromIPSW(p, work_paths[1])
+        if args.patched:
+            with Archive(args.patched[0]) as p:
+                extractKernelFromIPSW(p, work_paths[1])
 
         keys = getKeys(*values)['KernelCache']
 
         name, iv, key = keys
 
         for path in work_paths:
-            decryptXpwn(path, f'{path}.decrypted', iv, key)
+            if Path(path).exists():
+                decryptXpwn(path, f'{path}.decrypted', iv, key)
 
-            removeFile(path)
+                removeFile(path)
 
     else:
         parser.print_help()
