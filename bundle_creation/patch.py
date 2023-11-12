@@ -3,7 +3,7 @@ from pathlib import Path
 
 import bsdiff4
 
-from .command import runLdid
+from .command import runLdid, runImagetool
 from .dmg import (hdutilAdd, hdutilChmod, hdutilExtract, hdutilGrow,
                   hdutilRemovePath)
 from .file import copyFileToPath, getFileSize, moveFileToPath, removeFile, writeBinaryFile
@@ -31,7 +31,7 @@ def patchiBoot(files, version):
                 'nand-enable-reformat=1',
                 'rd=md0',
                 '-v',
-                'debug=0x14e',
+                'debug=0x2014e',
                 'serial=3',
                 'cs_enforcement_disable=1'
             ]
@@ -105,7 +105,8 @@ def patchRamdisk(version, board, ramdisk, working_dir):
     if optionsPathExists is False:
         removeFile(working_options)
 
-        optionsPath = Path(str(optionsPath).replace('options', f'options.{board[:-2]}'))
+        optionsPath = Path(str(optionsPath).replace(
+            'options', f'options.{board[:-2]}'))
         working_options = f'{working_dir}/{optionsPath.name}'
 
         print(f'Plain options.plist does not exist! Trying {optionsPath}...')
@@ -161,9 +162,45 @@ def patchRamdisk(version, board, ramdisk, working_dir):
     return patched
 
 
-def patchAppleLogo(files):
-    pass
+def patchAppleLogo(files, applelogo):
+    info = files['AppleLogo']
+
+    orig = str(info['orig'])
+    patched = f'{orig}.packed'
+
+    cmd = (
+        'inject',
+        applelogo,
+        patched,
+        orig,
+        info['iv'],
+        info['key']
+    )
+
+    runImagetool(cmd)
+
+    info['packed'] = Path(patched)
+
+    return files
 
 
-def patchRecovery(file):
-    pass
+def patchRecovery(files, recovery):
+    info = files['RecoveryMode']
+
+    orig = str(info['orig'])
+    patched = f'{orig}.packed'
+
+    cmd = (
+        'inject',
+        recovery,
+        patched,
+        orig,
+        info['iv'],
+        info['key']
+    )
+
+    runImagetool(cmd)
+
+    info['packed'] = Path(patched)
+
+    return files

@@ -12,7 +12,7 @@ def main():
     parser.add_argument('--device', nargs=1)
     parser.add_argument('--version', nargs=1)
     parser.add_argument('--ipsw', nargs=1)
-    parser.add_argument('--bootlogo', nargs=1)
+    parser.add_argument('--applelogo', nargs=1)
     parser.add_argument('--recovery', nargs=1)
     parser.add_argument('--download', action='store_true')
     parser.add_argument('--make', action='store_true')
@@ -23,9 +23,9 @@ def main():
         binCheck()
 
         if args.make:
-            makeIpsw(args.ipsw[0])
+            makeIpsw(args.ipsw[0], args.applelogo[0], args.recovery[0])
         else:
-            makeBundle(args.ipsw[0])
+            makeBundle(args.ipsw[0], args.applelogo[0], args.recovery[0])
 
     elif args.device and args.version and args.download:
         buildid = getBuildidForVersion(args.device[0], args.version[0])

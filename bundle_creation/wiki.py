@@ -70,6 +70,16 @@ def getKeys(codename, buildid, device):
             data['Kernelcache'],
             data['KernelcacheIV'],
             data['KernelcacheKey']
+        ],
+        'AppleLogo': [
+            data['AppleLogo'],
+            data['AppleLogoIV'],
+            data['AppleLogoKey']
+        ],
+        'RecoveryMode': [
+            data['RecoveryMode'],
+            data['RecoveryModeIV'],
+            data['RecoveryModeKey']
         ]
     }
 

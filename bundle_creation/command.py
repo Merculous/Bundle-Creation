@@ -106,4 +106,4 @@ def runImagetool(args):
         'bin/imagetool',
         *args
     )
-    return runCommand(cmd)
+    return runShellCommand(cmd)

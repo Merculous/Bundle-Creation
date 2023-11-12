@@ -7,12 +7,14 @@ from .diff import makePatchFiles
 from .dmg import getRootFSInfo, decryptDmg, buildRootFS
 from .encrypt import packFiles
 from .file import getFileHash, moveFileToPath, removeFile
-from .patch import patchFile, patchiBoot, patchKernel, patchRamdisk
+from .patch import patchFile, patchiBoot, patchKernel, patchRamdisk, patchAppleLogo, patchRecovery
 from .plist import getBuildManifestInfo, initInfoPlist, readPlistFile
 from .temp import makeTempDir
 from .utils import listDir, makeDirs, removeDirectory
 from .wiki import getKeys
 from .xpwntool import decryptXpwn, pack
+
+bundle_parent = 'FirmwareBundles'
 
 
 def getIpswInfo(zip_fd):
@@ -33,7 +35,9 @@ def getWorkingDirReady(zip_fd):
         files['RestoreRamDisk'],
         files['iBEC'],
         files['iBSS'],
-        files['iBoot']
+        files['iBoot'],
+        files['AppleLogo'],
+        files['RecoveryMode']
     )
 
     paths = zip_fd._listPaths()
@@ -50,7 +54,7 @@ def getWorkingDirReady(zip_fd):
     return working_dir
 
 
-def makeBundle(ipsw, applelogo=None, recovery=None):
+def makeBundle(ipsw, applelogo, recovery):
     with Archive(ipsw) as zip_r:
         info = getIpswInfo(zip_r)
         working_dir = getWorkingDirReady(zip_r)
@@ -72,9 +76,15 @@ def makeBundle(ipsw, applelogo=None, recovery=None):
 
     shared_info = packFiles(shared_info, platform)
 
+    if applelogo:
+        shared_info = patchAppleLogo(shared_info, applelogo)
+
+    if recovery:
+        shared_info = patchRecovery(shared_info, recovery)
+
     shared_info = getRootFSInfo(shared_info)
 
-    bundle = f'bundles/{device}_{board}_{version}_{buildid}.bundle'
+    bundle = f'{bundle_parent}/{device}_{board}_{version}_{buildid}.bundle'
     makeDirs(bundle)
 
     shared_info = makePatchFiles(shared_info, bundle)
@@ -84,7 +94,7 @@ def makeBundle(ipsw, applelogo=None, recovery=None):
     removeDirectory(working_dir)
 
 
-def makeIpsw(ipsw):
+def makeIpsw(ipsw, applelogo=None, recovery=None):
     with Archive(ipsw) as t:
         info = getIpswInfo(t)
 
@@ -97,12 +107,14 @@ def makeIpsw(ipsw):
 
     match = None
 
-    matches1 = [b for b in listDir('*.bundle', 'bundles') if b.name == bundle]
+    matches1 = [b for b in listDir(
+        '*.bundle', bundle_parent) if b.name == bundle]
 
     if not matches1:
-        makeBundle(ipsw)
+        makeBundle(ipsw, applelogo, recovery)
 
-        matches2 = [b for b in listDir('*.bundle', 'bundles') if b.name == bundle]
+        matches2 = [b for b in listDir(
+            '*.bundle', bundle_parent) if b.name == bundle]
 
         if not matches2:
             raise Exception('We tried to make a bundle but it does not exist!')
