@@ -56,3 +56,9 @@ def selectFromList(choices):
 
 def cd(path):
     os.chdir(path)
+
+
+def getUntether(device, buildid):
+    for path in listDir('*.tar', 'Jailbreak/g1lbertJB', True):
+        if path.parts[2] == device and buildid in path.parts[3]:
+            return path

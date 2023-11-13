@@ -10,7 +10,7 @@ from .file import getFileHash, moveFileToPath, removeFile, getFileSize
 from .patch import patchFile, patchiBoot, patchKernel, patchRamdisk, patchAppleLogo, patchRecovery
 from .plist import getBuildManifestInfo, initInfoPlist, readPlistFile
 from .temp import makeTempDir
-from .utils import listDir, makeDirs, removeDirectory
+from .utils import listDir, makeDirs, removeDirectory, getUntether
 from .wiki import getKeys
 from .xpwntool import decryptXpwn, pack
 
@@ -94,7 +94,7 @@ def makeBundle(ipsw, applelogo, recovery):
     removeDirectory(working_dir)
 
 
-def makeIpsw(ipsw, applelogo=None, recovery=None, untether=None):
+def makeIpsw(ipsw, applelogo=None, recovery=None, jailbreak=False):
     with Archive(ipsw) as t:
         info = getIpswInfo(t)
 
@@ -187,11 +187,13 @@ def makeIpsw(ipsw, applelogo=None, recovery=None, untether=None):
 
     decryptDmg(str(working_fs), str(decrypted_fs), fs_key)
 
-    if untether:
+    if jailbreak:
         dmg_grow = getFileSize(decrypted_fs) + 25_000_000
         hdutilGrow(str(decrypted_fs), dmg_grow)
 
-        hdutilUntar(str(decrypted_fs), untether)
+        untether = getUntether(device, buildid)
+
+        hdutilUntar(str(decrypted_fs), str(untether))
         hdutilUntar(str(decrypted_fs), 'Cydia.tar')
 
     fs_built = Path(f'{working_dir}/built_fs.dmg')

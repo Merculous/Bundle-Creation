@@ -14,7 +14,7 @@ def main():
     parser.add_argument('--ipsw', nargs=1)
     parser.add_argument('--applelogo', nargs=1)
     parser.add_argument('--recovery', nargs=1)
-    parser.add_argument('--untether', nargs=1)
+    parser.add_argument('--jailbreak', action='store_true')
     parser.add_argument('--download', action='store_true')
 
     args = parser.parse_args()
@@ -25,7 +25,7 @@ def main():
         ipsw = args.ipsw[0]
         applelogo = None
         recovery = None
-        untether = None
+        jailbreak = args.jailbreak
 
         if args.applelogo:
             applelogo = args.applelogo[0]
@@ -33,10 +33,7 @@ def main():
         if args.recovery:
             recovery = args.recovery[0]
 
-        if args.untether:
-            untether = args.untether[0]
-
-        makeIpsw(ipsw, applelogo, recovery, untether)
+        makeIpsw(ipsw, applelogo, recovery, jailbreak)
 
     elif args.device and args.version and args.download:
         buildid = getBuildidForVersion(args.device[0], args.version[0])
