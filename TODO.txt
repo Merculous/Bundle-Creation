@@ -16,3 +16,8 @@ Figure out how to patch restored_external/kernel regarding NOR for 3.x.
 Rewrite again. There's some renaming that needs to be done for a lot of modules.
 
 Allow keeping keys.
+
+Symlink 7z automatically for whatever platform.
+
+Compile binaries for Darwin, and possibly Windows. However, Windows users can and should use
+WSL to use this project, in fact, that's exactly what I've been using to work with this project.

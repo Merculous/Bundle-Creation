@@ -59,6 +59,10 @@ def cd(path):
 
 
 def getUntether(device, buildid):
-    for path in listDir('*.tar', 'Jailbreak/g1lbertJB', True):
-        if path.parts[2] == device and buildid in path.parts[3]:
-            return path
+    tar = f'{buildid}.tar'
+    untether = None
+
+    for path in listDir(tar, 'Jailbreak', True):
+        if device in path.parts and tar in path.parts:
+            untether = path
+            return untether

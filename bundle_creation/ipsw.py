@@ -188,13 +188,18 @@ def makeIpsw(ipsw, applelogo=None, recovery=None, jailbreak=False):
     decryptDmg(str(working_fs), str(decrypted_fs), fs_key)
 
     if jailbreak:
-        dmg_grow = getFileSize(decrypted_fs) + 25_000_000
-        hdutilGrow(str(decrypted_fs), dmg_grow)
-
         untether = getUntether(device, buildid)
 
-        hdutilUntar(str(decrypted_fs), str(untether))
-        hdutilUntar(str(decrypted_fs), 'Cydia.tar')
+        if untether:
+            dmg_grow = getFileSize(decrypted_fs) + 25_000_000
+            hdutilGrow(str(decrypted_fs), dmg_grow)
+
+            hdutilUntar(str(decrypted_fs), str(untether))
+            hdutilUntar(str(decrypted_fs), 'Cydia.tar')
+
+        else:
+            removeDirectory(working_dir)
+            raise FileNotFoundError(f'{buildid} does not have an untether!')
 
     fs_built = Path(f'{working_dir}/built_fs.dmg')
 
@@ -209,3 +214,5 @@ def makeIpsw(ipsw, applelogo=None, recovery=None, jailbreak=False):
 
     with Archive(new_ipsw, 'w') as c:
         c._addPaths(working_dir)
+
+    removeDirectory(working_dir)
