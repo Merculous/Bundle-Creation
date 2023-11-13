@@ -70,14 +70,32 @@ def patchImageVerification(data):
     if offset is None:
         print(f'Failed to find {name}. Using new pattern...')
 
-        pattern = b'\xdf\xf8\xe0\x00'
+        pattern = b'\x2e\x48\x0e\xf0'
 
-        patch = b'\xfd\xe7\xe0\x00'
+        patch = b'\xfd\xe7\x0e\xf0'
 
         offset = find(pattern, data)
 
         if offset is None:
-            raise Exception(f'Still cannot find {name}! Exiting!')
+            print(f'Failed to find {name}. Using new pattern...')
+
+            pattern = b'\xdf\xf8\xe0\x00'
+
+            patch = b'\xfd\xe7\xe0\x00'
+
+            offset = find(pattern, data)
+
+            if offset is None:
+                print(f'Failed to find {name}. Using new pattern...')
+
+                pattern = b'\x2f\x48\x0c\xf0'
+
+                patch = b'\xfd\xe7\x0c\xf0'
+
+                offset = find(pattern, data)
+
+            if offset is None:
+                raise Exception(f'Still cannot find {name}! Exiting!')
 
     patchBufferAtIndex(data, offset, pattern, patch)
 
