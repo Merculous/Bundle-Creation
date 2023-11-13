@@ -18,8 +18,6 @@ ipsw
 *.packed
 *.pyc
 
-kernelcache.*
-
 Keys.json
 Restore.json
 
