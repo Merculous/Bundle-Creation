@@ -6,7 +6,7 @@ import bsdiff4
 from .command import runLdid, runImagetool
 from .dmg import (hdutilAdd, hdutilChmod, hdutilExtract, hdutilGrow,
                   hdutilRemovePath)
-from .file import copyFileToPath, getFileSize, moveFileToPath, removeFile, writeBinaryFile
+from .file import copyFileToPath, getFileSize, moveFileToPath, removeFile, writeBinaryFile, readTextFile, writeTextFile
 from .iboot import useiBoot32Patcher
 from .kernel import applyRestorePatches
 from .ramdisk import patchASR, patchRestoredExternal, updateOptions
@@ -204,3 +204,24 @@ def patchRecovery(files, recovery):
     info['packed'] = Path(patched)
 
     return files
+
+
+def patchFStab(path):
+    '''
+    /dev/disk0s1 / hfs ro 0 1
+    /dev/disk0s2 /private/var hfs rw,nosuid,nodev 0 2
+    '''
+
+    '''
+    /dev/disk0s1s1 / hfs rw 0 1
+    /dev/disk0s1s2 /private/var hfs rw 0 2
+    '''
+
+    # line 1: ro -> rw
+    # line 2: rw,nosuid,nodev -> rw
+
+    data = readTextFile(path)
+    data[0] = data[0].replace('ro', 'rw')
+    data[1] = data[1].replace(',nosuid,nodev', '')
+
+    writeTextFile(path, data)

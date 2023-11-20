@@ -36,3 +36,13 @@ def copyFileToPath(in_path, out_path):
 
 def moveFileToPath(in_path, out_path):
     shutil.move(in_path, out_path)
+
+
+def readTextFile(path):
+    with open(path) as f:
+        return f.readlines()
+
+
+def writeTextFile(path, data):
+    with open(path, 'w') as f:
+        f.writelines(data)

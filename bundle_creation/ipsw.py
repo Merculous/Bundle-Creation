@@ -4,10 +4,10 @@ from pathlib import Path
 from .archive import Archive
 from .decrypt import decryptFiles
 from .diff import makePatchFiles
-from .dmg import getRootFSInfo, decryptDmg, buildRootFS, hdutilUntar, hdutilGrow
+from .dmg import getRootFSInfo, decryptDmg, buildRootFS, hdutilUntar, hdutilGrow, hdutilExtract, hdutilAdd
 from .encrypt import packFiles
 from .file import getFileHash, moveFileToPath, removeFile, getFileSize
-from .patch import patchFile, patchiBoot, patchKernel, patchRamdisk, patchAppleLogo, patchRecovery
+from .patch import patchFile, patchiBoot, patchKernel, patchRamdisk, patchAppleLogo, patchRecovery, patchFStab
 from .plist import getBuildManifestInfo, initInfoPlist, readPlistFile
 from .temp import makeTempDir
 from .utils import listDir, makeDirs, removeDirectory, getUntether
@@ -196,6 +196,16 @@ def makeIpsw(ipsw, applelogo=None, recovery=None, jailbreak=False):
 
             hdutilUntar(str(decrypted_fs), str(untether))
             hdutilUntar(str(decrypted_fs), 'Cydia.tar')
+
+            fstab_path = Path('/private/etc/fstab')
+
+            working_fstab = Path(f'{working_dir}/{fstab_path.name}')
+            hdutilExtract(str(decrypted_fs), str(
+                fstab_path), str(working_fstab))
+
+            patchFStab(working_fstab)
+
+            hdutilAdd(str(decrypted_fs), str(working_fstab), str(fstab_path))
 
         else:
             removeDirectory(working_dir)
