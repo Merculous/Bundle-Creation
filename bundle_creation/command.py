@@ -1,109 +1,21 @@
 
 import subprocess
 
-
-def runCommand(args):
-    cmd = subprocess.run(args)
-
-    if cmd.returncode < 0:
-        raise Exception
+# I would like to get rid shell completely...
 
 
-def runShellCommand(args):
-    cmd = subprocess.run(' '.join(args), shell=True)
+class Command:
+    def __init__(self) -> None:
+        pass
 
-    if cmd.returncode < 0:
-        raise Exception
+    def runCommand(self, cmd_args):
+        cmd = subprocess.run(cmd_args, capture_output=True, text=True)
 
+        to_return = (
+            cmd_args,
+            cmd.returncode,
+            cmd.stdout,
+            cmd.stderr
+        )
 
-def runCommandWithOutput(args):
-    cmd = subprocess.run(
-        args,
-        capture_output=True,
-        text=True
-    )
-
-    if cmd.returncode < 0:
-        print('Subprocess failed!')
-        print(f'Got returncode: {cmd.returncode}')
-        print(f'Ran with args: {args}')
-        print(f'Stdout: {cmd.stdout}')
-        print(f'Stderr: {cmd.stderr}')
-        raise Exception
-    else:
-        return cmd.stdout, cmd.stderr
-
-
-def runShellCommandWithOutput(args):
-    cmd = subprocess.run(
-        ' '.join(args),
-        capture_output=True,
-        text=True,
-        shell=True
-    )
-
-    if cmd.returncode < 0:
-        print('Subprocess failed!')
-        print(f'Got returncode: {cmd.returncode}')
-        print(f'Ran with args: {args}')
-        print(f'Stdout: {cmd.stdout}')
-        print(f'Stderr: {cmd.stderr}')
-        raise Exception
-    else:
-        return cmd.stdout, cmd.stderr
-
-
-def runDmg(args):
-    cmd = (
-        'bin/dmg',
-        *args
-    )
-    return runShellCommand(cmd)
-
-
-def run7zip(args):
-    cmd = (
-        'bin/7z',
-        *args
-    )
-    return runShellCommandWithOutput(cmd)
-
-
-def runiBoot32Patcher(args):
-    cmd = (
-        'bin/iBoot32Patcher',
-        *args
-    )
-    return runShellCommand(cmd)
-
-
-def runXpwntool(args):
-    cmd = (
-        'bin/xpwntool',
-        *args
-    )
-    return runShellCommand(cmd)
-
-
-def runHdutil(args):
-    cmd = (
-        'bin/hdutil',
-        *args
-    )
-    return runShellCommand(cmd)
-
-
-def runLdid(args):
-    cmd = (
-        'bin/ldid',
-        *args
-    )
-    return runCommand(cmd)
-
-
-def runImagetool(args):
-    cmd = (
-        'bin/imagetool',
-        *args
-    )
-    return runShellCommand(cmd)
+        return to_return

@@ -1,7 +1,7 @@
 
 from argparse import ArgumentParser
 
-from .ipsw import makeIpsw
+from .ipsw import IPSW
 from .ipsw_me import downloadArchive, getBuildidForVersion
 from .utils import binCheck
 
@@ -22,18 +22,10 @@ def main():
     if args.ipsw:
         binCheck()
 
-        ipsw = args.ipsw[0]
-        applelogo = None
-        recovery = None
-        jailbreak = args.jailbreak
+        # TODO Allow keeping FS when making custom ipsw so we don't decrypt twice
 
-        if args.applelogo:
-            applelogo = args.applelogo[0]
-
-        if args.recovery:
-            recovery = args.recovery[0]
-
-        makeIpsw(ipsw, applelogo, recovery, jailbreak)
+        with IPSW(args.ipsw[0]) as ipsw:
+            ipsw.makeIpsw()
 
     elif args.device and args.version and args.download:
         buildid = getBuildidForVersion(args.device[0], args.version[0])

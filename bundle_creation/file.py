@@ -1,7 +1,8 @@
 
 import shutil
-from hashlib import sha1
 from pathlib import Path
+
+from .utils import getSHA1
 
 
 def writeBinaryFile(data, path):
@@ -20,7 +21,8 @@ def readBinaryFile(path):
 
 def getFileHash(path):
     data = readBinaryFile(path)
-    return sha1(data).hexdigest()
+    hash = getSHA1(data)
+    return hash
 
 
 def removeFile(path):

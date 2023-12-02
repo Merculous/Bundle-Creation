@@ -1,25 +1,39 @@
 
 import os
 import shutil
+from hashlib import sha1
 from pathlib import Path
 
-from .json import readJSONFile
 
+def binCheck() -> None:
+    # bool values indicate the tool exists
 
-def binCheck():
-    tools = readJSONFile('tools.json')
+    tools = {
+        'required': {
+            '7z': False,
+            'dmg': False,
+            'hdutil': False,
+            'iBoot32Patcher': False,
+            'ldid': False
+        },
+        'optional': {
+            'imagetool': False
+        }
+    }
 
-    for tool in tools:
-        if tools[tool]['required']:
-            path_exists = Path(f'bin/{tool}').exists()
+    bin_contents = listDir('*', 'bin')
 
-            if path_exists:
-                tools[tool]['exists'] = True
+    for path in bin_contents:
+        for value in tools:
+            for tool in tools[value]:
+                if path.name == tool:
+                    tools[value][tool] = True
 
-    for tool in tools:
-        if tools[tool]['required']:
-            if not tools[tool]['exists']:
-                raise FileNotFoundError(f'{tool} is missing!')
+    # Make sure the tools in required are all True
+
+    for tool in tools['required']:
+        if tools['required'][tool] is False:
+            raise FileNotFoundError(f'{tool} is missing!')
 
 
 def makeDirs(path):
@@ -58,6 +72,8 @@ def cd(path):
     os.chdir(path)
 
 
+# FIXME
+
 def getUntether(device, buildid):
     tar = f'{buildid}.tar'
     untether = None
@@ -66,3 +82,7 @@ def getUntether(device, buildid):
         if device in path.parts and tar in path.parts:
             untether = path
             return untether
+
+
+def getSHA1(data):
+    return sha1(data).hexdigest()

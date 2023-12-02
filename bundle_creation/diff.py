@@ -1,25 +1,26 @@
 
 import bsdiff4
 
-
-def createBSDiffPatchFile(orig, new, patch_path):
-    bsdiff4.file_diff(orig, new, patch_path)
+from .file import writeBinaryFile
 
 
-def makePatchFiles(files, bundle):
-    for file in files:
-        if 'packed' in files[file]:
-            orig = files[file]['orig']
-            packed = files[file]['packed']
+def createDiffFromData(old_data, new_data, patch_path):
+    # bsdiff4 apparently doesn't like bytearray's :/
 
-            tmp = orig.name.split('.')
-            tmp[-1] = 'patch'
+    if isinstance(old_data, bytearray):
+        old_data = bytes(old_data)
 
-            patch = '.'.join(tmp)
-            bundle_patch = f'{bundle}/' + patch
+    if isinstance(new_data, bytearray):
+        new_data = bytes(new_data)
 
-            createBSDiffPatchFile(orig, packed, bundle_patch)
+    data = bsdiff4.diff(old_data, new_data)
 
-            files[file]['patch'] = patch
+    writeBinaryFile(data, patch_path)
 
-    return files
+
+def makePatchFiles(old_data, new_data, name, bundle):
+    patch_path = f'{bundle}/{name}.patch'
+
+    print(f'Making patch file for: {name}')
+
+    createDiffFromData(old_data, new_data, patch_path)

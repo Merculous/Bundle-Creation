@@ -1,109 +1,140 @@
 
-from .command import run7zip, runDmg, runHdutil
-from .file import getFileSize
+from pathlib import Path
+
+from .command import Command
 
 
-def decryptDmg(src, dst, key):
-    cmd = (
-        'extract',
-        src,
-        dst,
-        f'-k {key}'
-    )
+class DMG(Command):
+    def __init__(self, dmg, key=None) -> None:
+        super().__init__()
 
-    return runDmg(cmd)
+        self.dmg = dmg
+        self.key = key
 
+    def decryptFS(self, dst):
+        if self.key is None:
+            raise Exception('Please set key!')
 
-def buildRootFS(src, dst):
-    cmd = (
-        'build',
-        src,
-        dst
-    )
+        cmd_args = (
+            'bin/dmg',
+            'extract',
+            self.dmg,
+            dst,
+            '-k',
+            self.key
+        )
 
-    return runDmg(cmd)
+        cmd = self.runCommand(cmd_args)
 
+        if cmd[1] != 0:
+            raise Exception('dmg decryption seems to have failed!')
 
-def getRootFSInfo(files):
-    decrypted = files['RootFS']['decrypted']
+        return cmd
 
-    size = getFileSize(decrypted) // (1024*1024)
+    def getRootName(self):
+        cmd_args = (
+            'bin/7z',
+            'l',
+            self.dmg
+        )
 
-    output = run7zip(('l', str(decrypted)))[0].splitlines()
+        cmd = self.runCommand(cmd_args)
 
-    for line in output:
-        if '/Applications' in line:
-            break
+        cmd_stdout = cmd[2].splitlines()
 
-    mount_name = line.split()[-1].split('/')[0]
+        for line in cmd_stdout:
+            line = line.split()
 
-    files['RootFS']['size'] = size
-    files['RootFS']['mount_name'] = mount_name
+            if line and '/Applications' in line[-1]:
+                path = str(Path(line[-1]).parent)
+                return path
 
-    return files
+    def buildFS(self, dst):
+        cmd_args = (
+            'bin/dmg',
+            'build',
+            self.dmg,
+            dst
+        )
 
+        cmd = self.runCommand(cmd_args)
 
-def hdutilList(dmg, path):
-    cmd = (
-        dmg,
-        'ls',
-        path
-    )
-    return runHdutil(cmd)
+        if cmd[1] != 0:
+            raise Exception('dmg failed to build fs!')
 
+        return cmd
 
-def hdutilExtract(dmg, src, dst):
-    cmd = (
-        dmg,
-        'extract',
-        src,
-        dst
-    )
-    return runHdutil(cmd)
+    def extractFile(self, src, dst):
+        cmd_args = (
+            'bin/hdutil',
+            self.dmg,
+            'extract',
+            src,
+            dst
+        )
 
+        cmd = self.runCommand(cmd_args)
 
-def hdutilRemovePath(dmg, path):
-    cmd = (
-        dmg,
-        'rm',
-        path
-    )
-    return runHdutil(cmd)
+        return cmd
 
+    def grow(self, size):
+        cmd_args = (
+            'bin/hdutil',
+            self.dmg,
+            'grow',
+            str(size)
+        )
 
-def hdutilGrow(dmg, size):
-    cmd = (
-        dmg,
-        'grow',
-        str(size)
-    )
-    return runHdutil(cmd)
+        cmd = self.runCommand(cmd_args)
 
+        return cmd
 
-def hdutilAdd(dmg, src, dst):
-    cmd = (
-        dmg,
-        'add',
-        src,
-        dst
-    )
-    return runHdutil(cmd)
+    def ls(self, path):
+        cmd_args = (
+            'bin/hdutil',
+            self.dmg,
+            'ls',
+            path
+        )
 
+        cmd = self.runCommand(cmd_args)
 
-def hdutilChmod(dmg, mode, path):
-    cmd = (
-        dmg,
-        'chmod',
-        str(mode),
-        path
-    )
-    return runHdutil(cmd)
+        return cmd
 
+    def rm(self, path):
+        cmd_args = (
+            'bin/hdutil',
+            self.dmg,
+            'rm',
+            path
+        )
 
-def hdutilUntar(dmg, tar):
-    cmd = (
-        dmg,
-        'untar',
-        tar
-    )
-    return runHdutil(cmd)
+        cmd = self.runCommand(cmd_args)
+
+        return cmd
+
+    def addPath(self, src, dst):
+        cmd_args = (
+            'bin/hdutil',
+            self.dmg,
+            'add',
+            src,
+            dst
+        )
+
+        cmd = self.runCommand(cmd_args)
+
+        return cmd
+
+    def chmod(self, mode, path):
+        cmd_args = (
+            'bin/hdutil',
+            self.dmg,
+            'chmod',
+            str(mode),
+            path
+        )
+
+        cmd = self.runCommand(cmd_args)
+
+        return cmd

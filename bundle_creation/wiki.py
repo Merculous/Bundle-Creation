@@ -37,7 +37,7 @@ def getKeys(codename, buildid, device):
     data = key_data['data']
 
     needed_keys = {
-        'Restore Ramdisk': [
+        'RestoreRamDisk': [
             data['RestoreRamdisk'],
             data.get('RestoreRamdiskIV', ''),  # Can be unencrypted
             data.get('RestoreRamdiskKey', '')
@@ -62,8 +62,9 @@ def getKeys(codename, buildid, device):
             data['iBootIV'],
             data['iBootKey']
         ],
-        'RootFS': [
+        'OS': [
             data['RootFS'],
+            '',
             data['RootFSKey']
         ],
         'KernelCache': [

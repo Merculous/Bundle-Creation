@@ -2,7 +2,9 @@
 import plistlib
 from pathlib import Path
 
-from .file import getFileHash
+from bundle_creation.utils import listDir
+
+from .file import getFileHash, getFileSize
 
 
 def readPlistFile(path):
@@ -48,41 +50,84 @@ def getBuildManifestInfo(data):
     return info
 
 
-def initInfoPlist(files, working_dir, ipsw, bundle):
+def initInfoPlist(stuff):
     info_plist = readPlistFile('Info.plist')
 
-    bootchain = info_plist['FirmwarePatches']
+    patches = info_plist['FirmwarePatches']
 
-    for name in bootchain:
-        for file in files:
-            if file == name:
-                orig = files[name]['orig']
-                parent = str(working_dir) + '/'
-                path = str(orig).replace(parent, '')
+    # Add stuff to Filesystem Jailbreak section
+    # It includes fstab
 
-                bootchain[name]['File'] = path
-                bootchain[name]['IV'] = files[file]['iv']
-                bootchain[name]['Key'] = files[file]['key']
+    ipsw_dir_contents = listDir('*', stuff['ipsw_dir'], True)
 
-                if 'patch' in files[file]:
-                    bootchain[name]['Patch'] = files[file]['patch']
-                else:
-                    bootchain[name]['Patch'] = ''
+    for patch in patches:
+        if patch in ('AppleLogo', 'RecoveryMode'):
+            # TODO
+            continue
 
-    rootfs = files['RootFS']
+        if patch == 'Restore Ramdisk':
+            # This is done later
+            continue
 
-    info_plist['RootFilesystem'] = str(rootfs['orig'].name)
-    info_plist['RootFilesystemSize'] = rootfs['size']
-    info_plist['RootFilesystemKey'] = rootfs['key']
-    info_plist['RootFilesystemMountVolume'] = rootfs['mount_name']
+        for name in stuff['keys']:
+            if name == patch:
+                filename, iv, key = stuff['keys'][name]
 
-    info_plist['SHA1'] = getFileHash(ipsw)
+                for file in ipsw_dir_contents:
+                    sep = f'{str(stuff["ipsw_dir"])}/'
 
-    info_plist['Filename'] = ipsw
+                    full_path = Path(str(file).split(sep)[1])
 
-    tmp = ipsw.split('_')
-    del tmp[-1]
+                    if '.decrypted' in full_path.name:
+                        continue
 
-    info_plist['Name'] = '_'.join(tmp)
+                    if filename == full_path.name:
+                        patch_info = patches[patch]
 
-    writePlistFile(info_plist, f'{bundle}/Info.plist')
+                        patch_info['File'] = str(full_path)
+                        patch_info['IV'] = iv
+                        patch_info['Key'] = key
+                        patch_info['Patch'] = f'{full_path.name}.patch'
+
+    # Do ramdisk
+
+    ramdisk_info = patches['Restore Ramdisk']
+
+    ramdisk_name, ramdisk_iv, ramdisk_key = stuff['keys']['RestoreRamDisk']
+
+    if not ramdisk_name.endswith('.dmg'):
+        ramdisk_name = f'{ramdisk_name}.dmg'
+
+    ramdisk_info['File'] = ramdisk_name
+    ramdisk_info['IV'] = ramdisk_iv
+    ramdisk_info['Key'] = ramdisk_key
+
+    options = stuff['patched']['RestoreRamDisk']['options']['path']['dmg']
+
+    info_plist['RamdiskOptionsPath'] = options
+
+    # ipsw
+
+    info_plist['SHA1'] = getFileHash(stuff['ipsw_path'])
+    info_plist['Filename'] = stuff['ipsw_name']
+    info_plist['Name'] = stuff['ipsw_name'].replace('_Restore.ipsw', '')
+
+    # FS
+
+    fs_info = stuff['patched']['OS']
+
+    info_plist['RootFilesystem'] = Path(fs_info['path']['orig']).name
+
+    fs_size = getFileSize(fs_info['path']['decrypted'])
+
+    # Convert to MB
+
+    fs_size = fs_size // (1 << 20)
+
+    info_plist['RootFilesystemSize'] = fs_size
+
+    info_plist['RootFilesystemKey'] = fs_info['key']
+
+    info_plist['RootFilesystemMountVolume'] = fs_info['root']
+
+    return info_plist

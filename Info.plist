@@ -130,6 +130,8 @@
         </dict>
         <key>RamdiskMountVolume</key>
         <string>ramdisk</string>
+        <key>RamdiskOptionsPath</key>
+	    <string></string>
 	    <key>RootFilesystem</key>
 	    <string></string>
 	    <key>RootFilesystemSize</key>

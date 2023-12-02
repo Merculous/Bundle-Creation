@@ -1,168 +1,385 @@
 
 from pathlib import Path
 
-import bsdiff4
+from binpatch.find import find
+from binpatch.patch import patchBufferAtIndex
+from bsdiff4 import file_patch
+from kernelpatch.config import CS_ARCH_ARM, CS_MODE_THUMB
+from kernelpatch.patch import Patch as KernelPatch
 
-from .command import runLdid, runImagetool
-from .dmg import (hdutilAdd, hdutilChmod, hdutilExtract, hdutilGrow,
-                  hdutilRemovePath)
-from .file import copyFileToPath, getFileSize, moveFileToPath, removeFile, writeBinaryFile, readTextFile, writeTextFile
-from .iboot import useiBoot32Patcher
-from .kernel import applyRestorePatches
-from .ramdisk import patchASR, patchRestoredExternal, updateOptions
-from .utils import listDir
+from bundle_creation.plist import readPlistFile, serializePlist, writePlistFile
 
-
-def patchFile(src, patch):
-    bsdiff4.file_patch_inplace(src, patch)
+from .command import Command
+from .dmg import DMG
+from .file import copyFileToPath, getFileSize, readBinaryFile, writeBinaryFile
 
 
-def patchiBoot(files, version):
-    base_version = int(version.split('.')[0])
+class Patch(Command):
+    def __init__(self, in_path, out_path, version) -> None:
+        self.in_path = in_path
+        self.out_path = out_path
+        self.version = version
 
-    iBoot = ('iBSS', 'iBEC', 'LLB', 'iBoot')
+        if version:
+            self.version_prefix = int(self.version.split('.')[0])
 
-    for name in files:
-        if name in iBoot:
-            decrypted = str(files[name]['decrypted'])
-            patched = f'{decrypted}.patched'
+        self.working_dir = Path(self.in_path).parent
 
-            boot_args = [
-                'nand-enable-reformat=1',
-                'rd=md0',
-                '-v',
-                'debug=0x2014e',
-                'serial=3',
-                'cs_enforcement_disable=1'
-            ]
+    def applyBSPatchToFile(self, patchFile):
+        file_patch(self.in_path, self.out_path, patchFile)
 
-            if name == iBoot[0]:  # iBSS
-                # Pre iOS 5 iBSS actually has boot-args
+    def applyiBootPatch(self, name):
+        stage1canUseBootArgs = False
 
-                if base_version == 3 or base_version == 4:
-                    useiBoot32Patcher(decrypted, patched, boot_args)
-                else:
-                    useiBoot32Patcher(decrypted, patched)
+        if self.version_prefix <= 4:
+            stage1canUseBootArgs = True
 
-            if name == iBoot[1]:  # iBEC
-                if base_version == 3 or base_version == 4:
-                    useiBoot32Patcher(decrypted, patched, boot_args[2:])
-                else:
-                    useiBoot32Patcher(decrypted, patched, boot_args)
+        # TODO Custom boot-args
 
-            if name == iBoot[2]:  # LLB
-                useiBoot32Patcher(decrypted, patched)
+        cmd_args = [
+            'bin/iBoot32Patcher',
+            self.in_path,
+            self.out_path,
+            '--rsa'
+        ]
 
-            if name == iBoot[3]:  # iBoot
-                useiBoot32Patcher(decrypted, patched, boot_args[2:])
+        bootArgs = [
+            '-v',
+            'serial=3',
+            'debug=0x2014e',
+            'cs_enforcement_disable=1'
+        ]
 
-            files[name]['patched'] = Path(patched)
+        # iBoot32Patcher LITERALLY requires everything after "-b"
+        # as a string literal. So here, I cannot use boot-args that
+        # are a list of strings, and instead boot-args as literally
+        # just a string with all of them put together...
 
-    return files
+        bootArgs = ' '.join(bootArgs)
+
+        if name == 'iBSS':
+            newCmdArgs = (
+                '--debug',
+                '-b',
+                f'nand-enable-reformat=1 rd=md0 {bootArgs}'
+            )
+
+            cmd_args.extend(newCmdArgs)
+
+        if name == 'iBEC':
+            if stage1canUseBootArgs is False:
+                # We are iOS >= 5
+
+                newCmdArgs = (
+                    '--debug',
+                    '-b',
+                    f'nand-enable-reformat=1 rd=md0 {bootArgs}'
+                )
+
+                cmd_args.extend(newCmdArgs)
+
+        if name == 'iBoot':
+            newCmdArgs = (
+                '--debug',
+                '-b',
+                bootArgs
+            )
+
+            cmd_args.extend(newCmdArgs)
+
+        cmd = self.runCommand(cmd_args)
+
+        if cmd[1] != 1:
+            raise Exception('iBoot32Patcher seems to have failed!')
+
+        return self.out_path
+
+    def applyKernelPatch(self, name):
+        patched_data = KernelPatch(
+            CS_ARCH_ARM, CS_MODE_THUMB, self.in_path).patch()
+
+        writeBinaryFile(patched_data, self.out_path)
+
+        return self.out_path
+
+    def findAndPatch(self, name, data, old, new):
+        print(f'[*] {name}')
+
+        offset = find(old, data)
+
+        if offset is None:
+            raise Exception(f'Failed to patch at offset: {offset}')
+
+        print(f'[#] {name}')
+        print(f'Patching data at offset: {offset}')
+
+        patchBufferAtIndex(data, offset, old, new)
+
+    def patchWriteImage3Data(self, data):
+        # SCAB / APTicket
+
+        name = 'write_image3_data'
+
+        old = None
+        new = None
+
+        if self.version in ('6.0'):
+            old = b'\x61\x40\x08\x43\x0a\xd1'
+            new = b'\x61\x40\x08\x43\x0a\xe0'
+
+        else:
+            pass
+
+        self.findAndPatch(name, data, old, new)
+
+    def patchRamrodTicketUpdate(self, data):
+        name = 'ramrod_ticket_update'
+
+        old = None
+        new = None
+
+        if self.version in ('6.0'):
+            old = b'\x06\xf0\x1e\xf8\xb0\xb9'
+            new = b'\x00\x00\x00\x00\x16\xe0'
+
+        else:
+            pass
+
+        self.findAndPatch(name, data, old, new)
+
+    def patchRestoredExternal(self):
+        file = 'restored_external'
+
+        path = f'/usr/local/bin/{file}'
+
+        working_path = f'{self.working_dir}/{file}'
+
+        self.dmg.extractFile(path, working_path)
+
+        data = readBinaryFile(working_path)
+
+        info = {
+            file: {
+                'path': {
+                    'working': working_path,
+                    'dmg': path
+                },
+                'data': {
+                    'old': data,
+                    'new': data[:]  # Copy data for patching
+                }
+            }
+        }
+
+        newData = info[file]['data']['new']
+
+        self.patchRamrodTicketUpdate(newData)
+        self.patchWriteImage3Data(newData)
+
+        writeBinaryFile(newData, working_path)
+
+        return info
+
+    def patchImageSignatureVerification(self, data):
+        name = 'image signature verification'
+
+        old = None
+        new = None
+
+        if self.version in ('3.0'):
+            old = b'\x2f\x48\x06\xf0\x06\xe8'
+            new = b'\xfd\xe7\x06\xf0\x06\xe8'
+
+        elif self.version in ('3.1.3'):
+            old = b'\x2f\x48\x0c\xf0\xe8\xed'
+            new = b'\xfd\xe7\x0c\xf0\xe8\xed'
+
+        elif self.version in ('6.0'):
+            old = b'\x4d\xf6\x6a\x30'
+            new = b'\xfa\xe7\x6a\x30'
+
+        else:
+            pass
+
+        self.findAndPatch(name, data, old, new)
+
+    def patchASR(self):
+        file = 'asr'
+
+        path = f'/usr/sbin/{file}'
+
+        working_path = f'{self.working_dir}/{file}'
+
+        self.dmg.extractFile(path, working_path)
+
+        data = readBinaryFile(working_path)
+
+        info = {
+            file: {
+                'path': {
+                    'working': working_path,
+                    'dmg': path
+                },
+                'data': {
+                    'old': data,
+                    'new': data[:]  # Copy data for patching
+                }
+            }
+        }
+
+        newData = info[file]['data']['new']
+
+        self.patchImageSignatureVerification(newData)
+
+        writeBinaryFile(newData, working_path)
+
+        return info
+
+    def patchOptions(self, jailbreak=False):
+        # We search for the plist since it can either
+        # be "options.plist" or "options.(board).plist"
+
+        path = '/usr/local/share/restore'
+
+        path_contents = self.dmg.ls(path)[2].splitlines()
+
+        plist_name = None
+
+        for line in path_contents:
+            file = line.split()[-1]
+
+            if file.startswith('options') and file.endswith('.plist'):
+                plist_name = file
+                break
+
+        if plist_name is None:
+            raise FileNotFoundError('Could not find options plist!')
+
+        plist_path = f'{path}/{plist_name}'
+
+        working_path = f'{self.working_dir}/{plist_name}'
+
+        self.dmg.extractFile(plist_path, working_path)
+
+        plist_data = readPlistFile(working_path)
+
+        info = {
+            'options': {
+                'path': {
+                    'working': working_path,
+                    'dmg': plist_path
+                },
+                'data': {
+                    'old': plist_data,
+                    'new': plist_data.copy()  # Copy data for patching
+                }
+            }
+        }
+
+        oldData = info['options']['data']['old']
+        newData = info['options']['data']['new']
+
+        newData['UpdateBaseband'] = False
+
+        writePlistFile(newData, working_path)
+
+        # Convert dict -> bytes for .patch file making
+
+        oldData = serializePlist(oldData)
+        newData = serializePlist(newData)
+
+        info['options']['data']['old'] = oldData
+        info['options']['data']['new'] = newData
+
+        if jailbreak:
+            pass
+
+        return info
+
+    def patchFStab(self):
+        pass
+
+    def applyRamdiskPatch(self, name, jailbreak=False):
+        # hdutil refuses to work on files with
+        # ".dmg" in them, we need to remove that.
+
+        newPath = f'{self.working_dir}/ramdisk'
+
+        copyFileToPath(self.in_path, newPath)
+
+        self.dmg = DMG(newPath)
+
+        ramdisk_size = getFileSize(newPath)
+
+        grow_size = ramdisk_size + 6_000_000
+
+        self.dmg.grow(grow_size)
+
+        info = {}
+
+        if self.version_prefix >= 6:
+            rde_info = self.patchRestoredExternal()
+
+            rde_paths = rde_info['restored_external']['path']
+
+            working_rde = rde_paths['working']
+            rde_path = rde_paths['dmg']
+
+            self.dmg.rm(rde_path)
+            self.dmg.addPath(working_rde, rde_path)
+            self.dmg.chmod(100755, rde_path)
+
+            info.update(rde_info)
+
+        asr_info = self.patchASR()
+
+        asr_paths = asr_info['asr']['path']
+
+        working_asr = asr_paths['working']
+        asr_path = asr_paths['dmg']
+
+        # Sign asr
+
+        ldid_args = (
+            'bin/ldid',
+            '-S',
+            working_asr
+        )
+
+        self.runCommand(ldid_args)
+
+        self.dmg.rm(asr_path)
+        self.dmg.addPath(working_asr, asr_path)
+        self.dmg.chmod(100755, asr_path)
+
+        info.update(asr_info)
+
+        options_info = self.patchOptions()
+
+        options_paths = options_info['options']['path']
+
+        working_options = options_paths['working']
+        options_path = options_paths['dmg']
+
+        self.dmg.rm(options_path)
+        self.dmg.addPath(working_options, options_path)
+
+        info.update(options_info)
+
+        if jailbreak:
+            pass
+
+        # Rename ramdisk back
+
+        copyFileToPath(newPath, self.out_path)
+
+        return (self.out_path, info)
+
+    def applyImageToImg3(self, name):
+        pass
 
 
-def patchKernel(files):
-    decrypted = str(files['KernelCache']['decrypted'])
-    patched = f'{decrypted}.patched'
-
-    applyRestorePatches(decrypted, patched)
-
-    files['KernelCache']['patched'] = Path(patched)
-
-    return files
-
-
-def patchRamdisk(version, board, ramdisk, working_dir):
-    asr = Path('usr/sbin/asr')
-    working_asr = f'{working_dir}/asr'
-
-    rde = Path('usr/local/bin/restored_external')
-    working_rde = f'{working_dir}/{rde.name}'
-
-    # Remove ".dmg" from ramdisk cause it matters, seriously
-
-    dmg_renamed = f'{working_dir}/ramdisk'
-
-    copyFileToPath(ramdisk, dmg_renamed)
-
-    grow_size = getFileSize(dmg_renamed) + 6_000_00
-
-    hdutilGrow(dmg_renamed, grow_size)
-
-    # /usr/local/share/restore/options.(n88).plist
-
-    optionsPath = Path('/usr/local/share/restore/options.plist')
-    working_options = f'{working_dir}/{optionsPath.name}'
-
-    print(f'Trying to read from {optionsPath}. This may fail!')
-
-    hdutilExtract(dmg_renamed, str(optionsPath), working_options)
-
-    # Some options.plist include the board in the name
-
-    optionsPathExists = True if getFileSize(working_options) != 0 else False
-
-    if optionsPathExists is False:
-        removeFile(working_options)
-
-        optionsPath = Path(str(optionsPath).replace(
-            'options', f'options.{board[:-2]}'))
-        working_options = f'{working_dir}/{optionsPath.name}'
-
-        print(f'Plain options.plist does not exist! Trying {optionsPath}...')
-
-        hdutilExtract(dmg_renamed, str(optionsPath), working_options)
-
-    try:
-        updateOptions(working_options)
-    except FileNotFoundError:
-        print('Weird. A options.plist does not exist. Continue anyway...')
-    else:
-        hdutilAdd(dmg_renamed, str(working_options), str(optionsPath))
-        removeFile(working_options)
-
-    # asr
-
-    hdutilExtract(dmg_renamed, str(asr), working_asr)
-
-    asr_patched_data = patchASR(working_asr)
-
-    writeBinaryFile(asr_patched_data, working_asr)
-
-    runLdid(('-S', working_asr))
-    hdutilRemovePath(dmg_renamed, str(asr))
-
-    # restored_external
-
-    if version.startswith('6'):
-        hdutilExtract(dmg_renamed, str(rde), working_rde)
-
-        rde_patched_data = patchRestoredExternal(working_rde)
-
-        writeBinaryFile(rde_patched_data, working_rde)
-
-        # runLdid(('-S', working_rde))
-        hdutilRemovePath(dmg_renamed, str(rde))
-
-    for path in listDir('*', working_dir):
-        if path.name == 'asr':
-            hdutilAdd(dmg_renamed, str(path), str(asr))
-            hdutilChmod(dmg_renamed, 100755, str(asr))
-            removeFile(path)
-
-        if path.name == 'restored_external':
-            hdutilAdd(dmg_renamed, str(path), str(rde))
-            hdutilChmod(dmg_renamed, 100755, str(rde))
-            removeFile(path)
-
-    patched = f'{ramdisk}.patched'
-
-    moveFileToPath(dmg_renamed, patched)
-
-    return patched
-
-
-def patchAppleLogo(files, applelogo):
+'''def patchAppleLogo(files, applelogo):
     info = files['AppleLogo']
 
     orig = str(info['orig'])
@@ -203,25 +420,12 @@ def patchRecovery(files, recovery):
 
     info['packed'] = Path(patched)
 
-    return files
+    return files'''
 
 
-def patchFStab(path):
-    '''
-    /dev/disk0s1 / hfs ro 0 1
-    /dev/disk0s2 /private/var hfs rw,nosuid,nodev 0 2
-    '''
-
-    '''
-    /dev/disk0s1s1 / hfs rw 0 1
-    /dev/disk0s1s2 /private/var hfs rw 0 2
-    '''
-
-    # line 1: ro -> rw
-    # line 2: rw,nosuid,nodev -> rw
-
+'''def patchFStab(path):
     data = readTextFile(path)
     data[0] = data[0].replace('ro', 'rw')
     data[1] = data[1].replace(',nosuid,nodev', '')
 
-    writeTextFile(path, data)
+    writeTextFile(path, data)'''

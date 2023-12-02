@@ -1,228 +1,502 @@
 
 from pathlib import Path
 
+from img3lib.img3 import IMG3
+
 from .archive import Archive
-from .decrypt import decryptFiles
+from .bundle import Bundle
 from .diff import makePatchFiles
-from .dmg import getRootFSInfo, decryptDmg, buildRootFS, hdutilUntar, hdutilGrow, hdutilExtract, hdutilAdd
-from .encrypt import packFiles
-from .file import getFileHash, moveFileToPath, removeFile, getFileSize
-from .patch import patchFile, patchiBoot, patchKernel, patchRamdisk, patchAppleLogo, patchRecovery, patchFStab
-from .plist import getBuildManifestInfo, initInfoPlist, readPlistFile
+from .dmg import DMG
+from .file import getFileSize, moveFileToPath, readBinaryFile, removeFile, writeBinaryFile
+from .patch import Patch
+from .plist import getBuildManifestInfo, initInfoPlist, readPlistFile, writePlistFile
 from .temp import makeTempDir
-from .utils import listDir, makeDirs, removeDirectory, getUntether
+from .utils import getSHA1, listDir, makeDirs, removeDirectory
 from .wiki import getKeys
-from .xpwntool import decryptXpwn, pack
 
-bundle_parent = 'FirmwareBundles'
 
+class IPSW(Archive):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
-def getIpswInfo(zip_fd):
-    manifest = zip_fd._readPath('BuildManifest.plist')
-    manifest_info = getBuildManifestInfo(manifest)
-    return manifest_info
+        self.ipsw_info = self.getIpswInfo()
 
+        self.device = self.ipsw_info['device']
+        self.board = self.ipsw_info['board']
+        self.version = self.ipsw_info['version']
+        self.buildid = self.ipsw_info['buildid']
+        self.codename = self.ipsw_info['codename']
+        self.platform = self.ipsw_info['platform']
 
-def getWorkingDirReady(zip_fd):
-    info = getIpswInfo(zip_fd)
+        self.ipsw_name = Path(self.filename).name
 
-    files = info['files']
+        self.keys = getKeys(self.codename, self.buildid, self.device)
 
-    needed = (
-        files['KernelCache'],
-        files['LLB'],
-        files['OS'],
-        files['RestoreRamDisk'],
-        files['iBEC'],
-        files['iBSS'],
-        files['iBoot'],
-        files['AppleLogo'],
-        files['RecoveryMode']
-    )
+    def getIpswInfo(self) -> dict:
+        manifest = self._readPath('BuildManifest.plist')
+        manifest_info = getBuildManifestInfo(manifest)
+        return manifest_info
 
-    paths = zip_fd._listPaths()
+    def getRequiredFiles(self):
+        files = self.ipsw_info['files']
 
-    working_dir = makeTempDir()
+        required = {
+            'AppleLogo': None,
+            'KernelCache': None,
+            'LLB': None,
+            'OS': None,
+            'RecoveryMode': None,
+            'RestoreRamDisk': None,
+            'iBEC': None,
+            'iBSS': None,
+            'iBoot': None
+        }
 
-    for path in paths:
-        file = Path(path.filename)
+        for file in files:
+            for name in required:
+                if file == name:
+                    required[name] = str(files[name])
 
-        for required in needed:
-            if file == required:
-                zip_fd._extractPath(path, working_dir)
+        return required
 
-    return working_dir
+    def extractRequired(self, temp_dir):
+        files = self.getRequiredFiles()
 
+        extracted = {}
 
-def makeBundle(ipsw, applelogo, recovery):
-    with Archive(ipsw) as zip_r:
-        info = getIpswInfo(zip_r)
-        working_dir = getWorkingDirReady(zip_r)
+        for file in files:
+            in_path = files[file]
+            out_path = f'{temp_dir}/{in_path}'
 
-    codename = info['codename']
-    buildid = info['buildid']
-    device = info['device']
-    version = info['version']
-    board = info['board']
-    platform = info['platform']
+            self._extractPath(in_path, temp_dir)
 
-    keys = getKeys(codename, buildid, device)
+            extracted[file] = {
+                'path': out_path
+            }
 
-    shared_info = decryptFiles(keys, working_dir)
+            # TODO
+            # Remove AppleLogo and RecoveryMode from skip
 
-    shared_info = patchiBoot(shared_info, version)
+            skip = ('AppleLogo', 'OS', 'RecoveryMode', 'RestoreRamDisk')
 
-    shared_info = patchKernel(shared_info)
+            if file not in skip:
+                extracted[file]['data'] = readBinaryFile(out_path)
 
-    shared_info = packFiles(shared_info, platform)
+        return extracted
 
-    if applelogo:
-        shared_info = patchAppleLogo(shared_info, applelogo)
+    def decryptFiles(self, files):
+        # Start decryption
 
-    if recovery:
-        shared_info = patchRecovery(shared_info, recovery)
+        info = {}
 
-    shared_info = getRootFSInfo(shared_info)
+        for file in files:
+            if file == 'OS':
+                # RootFS
 
-    bundle = f'{bundle_parent}/{device}_{board}_{version}_{buildid}.bundle'
-    makeDirs(bundle)
+                path = files[file]['path']
+                decrypted = f'{Path(path).parent}/rootfs'
 
-    shared_info = makePatchFiles(shared_info, bundle)
+                filename, iv, key = self.keys[file]
 
-    initInfoPlist(shared_info, working_dir, ipsw, bundle)
+                dmgfile = DMG(path, key)
+                dmgfile.decryptFS(decrypted)
 
-    removeDirectory(working_dir)
+                dmgfile.dmg = decrypted
 
+                root = dmgfile.getRootName()
 
-def makeIpsw(ipsw, applelogo=None, recovery=None, jailbreak=False):
-    with Archive(ipsw) as t:
-        info = getIpswInfo(t)
+                info[file] = {
+                    'path': {
+                        'orig': path,
+                        'decrypted': decrypted
+                    },
+                    'key': key,
+                    'root': root
+                }
 
-    buildid = info['buildid']
-    device = info['device']
-    version = info['version']
-    board = info['board']
+                continue
 
-    bundle = f'{device}_{board}_{version}_{buildid}.bundle'
+            for name in self.keys:
+                filename, iv, key = self.keys[name]
 
-    match = None
+                if '-' in filename and '.dmg' not in filename:
+                    filename = f'{filename}.dmg'
 
-    matches1 = [b for b in listDir(
-        '*.bundle', bundle_parent) if b.name == bundle]
+                path = files[file]['path']
 
-    if not matches1:
-        makeBundle(ipsw, applelogo, recovery)
+                if Path(path).name == filename:
+                    data = readBinaryFile(path)
 
-        matches2 = [b for b in listDir(
-            '*.bundle', bundle_parent) if b.name == bundle]
+                    decrypted = f'{path}.decrypted'
 
-        if not matches2:
-            raise Exception('We tried to make a bundle but it does not exist!')
+                    img3file = IMG3(data, iv, key)
 
-        match = matches2[0]
+                    decrypted_data = img3file.decrypt()
 
-    else:
-        match = matches1[0]
+                    writeBinaryFile(decrypted_data, decrypted)
 
-    info_plist = readPlistFile(f'{match}/Info.plist')
+                    info[name] = {
+                        'path': {
+                            'orig': path,
+                            'decrypted': decrypted
+                        },
+                        'data': {
+                            'old': data
+                        },
+                        'iv': iv,
+                        'key': key
+                    }
 
-    ipsw_hash = getFileHash(ipsw)
-    plist_hash = info_plist['SHA1']
+        return info
 
-    if ipsw_hash != plist_hash:
-        raise Exception(f'Expected SHA1 {plist_hash}\nGot {ipsw_hash}')
+    def applyPatches(self, files):
+        for file in files:
+            # TODO Applelogo and Recovery
 
-    working_dir = makeTempDir()
+            if file == 'OS':
+                # TODO
+                # I'm skipping this, as this is the FS.
+                # However, I may use this if I'm adding
+                # Cydia or other stuff.
+                continue
 
-    with Archive(ipsw) as r:
-        r._extractAll(working_dir)
+            in_path = files[file]['path']['decrypted']
 
-    patches = info_plist['FirmwarePatches']
+            out_path = f'{in_path}.patched'
 
-    for name in patches:
-        if 'Patch' in patches[name]:
-            patch = patches[name]['Patch']
+            patch = Patch(in_path, out_path, self.version)
 
-            if patch:
-                path = patches[name]['File']
-                file_path = f'{working_dir}/{path}'
+            if file in ('iBSS', 'iBEC', 'LLB', 'iBoot'):
+                patched_iBoot = patch.applyiBootPatch(file)
 
-                patch_path = f'{match}/{patch}'
+                files[file]['path']['patched'] = patched_iBoot
+                files[file]['data']['new'] = readBinaryFile(patched_iBoot)
 
-                patchFile(file_path, patch_path)
+            elif file == 'KernelCache':
+                # FIXME
+                # Seems 6.0 kernel patching is missing a bunch
+                # of patches, like NOR and others.
 
-    ramdisk = patches['Restore Ramdisk']
-    iv = ramdisk['IV']
-    key = ramdisk['Key']
+                patched_kernel = patch.applyKernelPatch(file)
 
-    working_ramdisk = f'{working_dir}/{ramdisk["File"]}'
+                files[file]['path']['patched'] = patched_kernel
+                files[file]['data']['new'] = readBinaryFile(patched_kernel)
 
-    decrypted = f'{working_ramdisk}.decrypted'
+            elif file in ('AppleLogo', 'RecoveryMode'):
+                pass
 
-    decryptXpwn(working_ramdisk, decrypted, iv, key)
+            elif file == 'RestoreRamDisk':
+                patched_ramdisk = patch.applyRamdiskPatch(file)
 
-    patched = patchRamdisk(version, board, decrypted, working_dir)
+                files[file]['path']['patched'] = patched_ramdisk[0]
 
-    packed = f'{patched}.packed'
+                files[file].update(patched_ramdisk[1])
 
-    pack(patched, packed, working_ramdisk, iv, key)
+            else:
+                raise Exception(f'Extra file included for patching: {file}')
 
-    moveFileToPath(packed, working_ramdisk)
+        return files
 
-    removeFile(decrypted)
-    removeFile(patched)
+    def packFiles(self, files):
+        for file in files:
+            # TODO
+            # FS
 
-    # Gotta do the FS stuff below otherwise idevicerestore won't work.
-    # Also idevicerestore must be on a version where it extracts the
-    # filesystem, or is in a path where the filesytem and the rest
-    # of the ipsw contents are located. I found this out the very
-    # hard way. Literally took around 2 months just to figure this out...
+            if file == 'OS':
+                continue
 
-    fs = info_plist['RootFilesystem']
-    fs_key = info_plist['RootFilesystemKey']
+            for name in self.keys:
+                if name == file:
+                    filename, iv, key = self.keys[name]
 
-    working_fs = Path(f'{working_dir}/{fs}')
+                    old_data = bytes(files[file]['data']['old'])
 
-    decrypted_fs = Path(f'{working_dir}/rootfs.decrypted')
+                    files[file]['data']['old'] = old_data
 
-    decryptDmg(str(working_fs), str(decrypted_fs), fs_key)
+                    new_data = files[file]['data'].get('new', None)
 
-    if jailbreak:
-        untether = getUntether(device, buildid)
+                    if new_data is not None:
+                        new_data = bytes(new_data)
 
-        if untether:
-            dmg_grow = getFileSize(decrypted_fs) + 25_000_000
-            hdutilGrow(str(decrypted_fs), dmg_grow)
+                    img3file = IMG3(old_data, iv, key)
 
-            hdutilUntar(str(decrypted_fs), str(untether))
-            hdutilUntar(str(decrypted_fs), 'Cydia.tar')
+                    if name in ('AppleLogo', 'RecoveryMode'):
+                        continue
 
-            fstab_path = Path('/private/etc/fstab')
+                    elif name == 'LLB':
+                        img3file.do3GSLLBHax()
 
-            working_fstab = Path(f'{working_dir}/{fstab_path.name}')
-            hdutilExtract(str(decrypted_fs), str(
-                fstab_path), str(working_fstab))
+                    elif name == 'RestoreRamDisk':
+                        continue
 
-            patchFStab(working_fstab)
+                    else:
+                        img3file.replaceData(new_data)
 
-            hdutilAdd(str(decrypted_fs), str(working_fstab), str(fstab_path))
+                    new_data = img3file.data
 
-        else:
-            removeDirectory(working_dir)
-            raise FileNotFoundError(f'{buildid} does not have an untether!')
+                    files[file]['data']['new'] = new_data
 
-    fs_built = Path(f'{working_dir}/built_fs.dmg')
+                    writeBinaryFile(new_data, files[file]['path']['patched'])
 
-    buildRootFS(str(decrypted_fs), str(fs_built))
+        return files
 
-    removeFile(working_fs)
-    removeFile(decrypted_fs)
+    def makeBundle(self, path):
+        makeDirs(path)
 
-    moveFileToPath(fs_built, working_fs)
+        # Extract ipsw
 
-    new_ipsw = ipsw.replace('Restore', 'Custom')
+        temp_dir = makeTempDir()
 
-    with Archive(new_ipsw, 'w') as c:
-        c._addPaths(working_dir)
+        # Instead of using try for ctrl+c handling...
+        # I could make a decorator while handles that
+        # for any functions I use where we can have
+        # leftover files if something gets raised,
+        # which will also handling ctrl+c if possible.
 
-    removeDirectory(working_dir)
+        extracted = self.extractRequired(temp_dir)
+
+        decrypted = self.decryptFiles(extracted)
+
+        patches = self.applyPatches(decrypted)
+
+        packed = self.packFiles(patches)
+
+        # Make patch files
+
+        for file in packed:
+            if file == 'OS':
+                continue
+
+            file_info = packed[file]
+
+            old_data = file_info['data']['old']
+            new_data = file_info['data'].get('new', None)
+
+            if file == 'RestoreRamDisk':
+                extra = ('asr', 'options', 'restored_external')
+
+                for name in packed[file]:
+                    if name not in extra:
+                        continue
+
+                    extra_info = packed[file][name]
+
+                    old_data = extra_info['data']['old']
+                    new_data = extra_info['data']['new']
+
+                    filename = Path(extra_info['path']['working']).name
+
+                    makePatchFiles(old_data, new_data, filename, path)
+
+                continue
+
+            elif new_data is None:
+                continue
+
+            filename = Path(file_info['path']['orig']).name
+
+            makePatchFiles(old_data, new_data, filename, path)
+
+        # Add stuff to Info.plist
+
+        # Give the function some needed data to work with
+
+        stuff = {
+            'patched': packed,
+            'ipsw_dir': temp_dir,
+            'keys': self.keys,
+            'ipsw_path': self.filename,
+            'ipsw_name': self.ipsw_name
+        }
+
+        info_plist = initInfoPlist(stuff)
+
+        plist_path = f'{path}/Info.plist'
+
+        writePlistFile(info_plist, plist_path)
+
+        removeDirectory(temp_dir)
+
+    def makeIpsw(self):
+        bundle = Bundle(self.device, self.board, self.version, self.buildid)
+
+        bundle_exists = bundle.findBundle()
+
+        bundle_path = bundle.name
+
+        if not bundle_exists:  # Missing bundle
+            self.makeBundle(bundle_path)
+
+        info_plist = readPlistFile(f'{bundle_path}/Info.plist')
+
+        temp_dir = makeTempDir()
+
+        # Extract stuff to modify
+
+        self._extractAll(temp_dir)
+
+        # FS
+
+        print('RootFS setup...')
+
+        fs_name = info_plist['RootFilesystem']
+        fs_key = info_plist['RootFilesystemKey']
+
+        fs_working = f'{temp_dir}/{fs_name}'
+        fs_decrypted = f'{fs_working}.decrypted'
+
+        dmgfile = DMG(fs_working, fs_key)
+        dmgfile.decryptFS(fs_decrypted)
+
+        fs_built = f'{fs_decrypted}.built'
+
+        dmgfile.dmg = fs_decrypted
+        dmgfile.buildFS(fs_built)
+
+        removeFile(fs_decrypted)
+
+        moveFileToPath(fs_built, fs_working)
+
+        print('RootFS setup done.')
+
+        patches = info_plist['FirmwarePatches']
+
+        # Ramdisk
+
+        print('Applying ramdisk patches...')
+
+        ramdisk_info = patches['Restore Ramdisk']
+
+        ramdisk_name = ramdisk_info['File']
+        ramdisk_iv = ramdisk_info['IV']
+        ramdisk_key = ramdisk_info['Key']
+
+        working_ramdisk = f'{temp_dir}/{ramdisk_name}'
+        working_ramdisk_data = readBinaryFile(working_ramdisk)
+
+        ramdisk_decrypted = f'{temp_dir}/ramdisk'
+
+        img3file = IMG3(working_ramdisk_data, ramdisk_iv, ramdisk_key)
+        ramdisk_decrypted_data = img3file.decrypt()
+
+        writeBinaryFile(ramdisk_decrypted_data, ramdisk_decrypted)
+
+        ramdisk_grow = getFileSize(ramdisk_decrypted) + 6_000_000
+
+        dmgfile.dmg = ramdisk_decrypted
+        dmgfile.grow(ramdisk_grow)
+
+        # Options
+
+        options_path = info_plist['RamdiskOptionsPath']
+
+        options_patch = bundle.getPatch('options')
+
+        working_options = f'{temp_dir}/{Path(options_path).name}'
+
+        dmgfile.extractFile(options_path, working_options)
+
+        patcher = Patch(working_options, working_options, None)
+        patcher.applyBSPatchToFile(options_patch)
+
+        dmgfile.addPath(working_options, options_path)
+
+        removeFile(working_options)
+
+        # ASR / restored_external
+
+        ramdisk_patches = info_plist['RamdiskPatches']
+
+        for file in ramdisk_patches:
+            dmg_path = ramdisk_patches[file]['File']
+            patchFile = ramdisk_patches[file]['Patch']
+
+            bundlePatch = bundle.getPatch(patchFile)
+
+            if bundlePatch:
+                working_file = f'{temp_dir}/{file}'
+
+                dmgfile.extractFile(dmg_path, working_file)
+
+                patcher.in_path = working_file
+                patcher.out_path = working_file
+                patcher.applyBSPatchToFile(bundlePatch)
+
+                if file == 'asr':
+                    ldid_args = (
+                        'bin/ldid',
+                        '-S',
+                        working_file
+                    )
+
+                    dmgfile.runCommand(ldid_args)
+
+                # Hmmm, seems like we HAVE to remove these first
+
+                dmgfile.rm(dmg_path)
+                dmgfile.addPath(working_file, dmg_path)
+                dmgfile.chmod(100755, dmg_path)
+
+                removeFile(working_file)
+
+        # Replace DATA
+
+        ramdisk_patched = f'{ramdisk_decrypted}.patched'
+
+        ramdisk_patched_data = readBinaryFile(ramdisk_decrypted)
+
+        img3file.replaceData(ramdisk_patched_data)
+
+        writeBinaryFile(img3file.data, ramdisk_patched)
+
+        removeFile(ramdisk_decrypted)
+
+        moveFileToPath(ramdisk_patched, working_ramdisk)
+
+        print('Ramdisk patches done...')
+
+        # Other
+
+        for file in patches:
+            if file == 'Restore Ramdisk':
+                # Already patched above
+                continue
+
+            if file in ('AppleLogo', 'RecoveryMode'):
+                # TODO
+                continue
+
+            print(f'Patching {file}...')
+
+            file_info = patches[file]
+
+            filename = file_info['File']
+            patchfile = file_info['Patch']
+
+            working_file = f'{temp_dir}/{filename}'
+
+            patched = f'{working_file}.patched'
+
+            patcher.in_path = working_file
+            patcher.out_path = patched
+
+            patch_path = bundle.getPatch(patchfile)
+
+            patcher.applyBSPatchToFile(patch_path)
+
+            moveFileToPath(patched, working_file)
+
+            print(f'{file} patching done.')
+
+        # Start making the ipsw
+
+        print('Putting everything together...')
+
+        custom_ipsw = self.filename.replace('Restore', 'Custom')
+
+        with Archive(custom_ipsw, 'w') as f:
+            f._addPaths(temp_dir)
+
+        removeDirectory(temp_dir)
+
+        print('Done patching ipsw! Have fun :P -Merc')

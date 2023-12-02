@@ -3,7 +3,6 @@
 dmg: xpwn \
 hdutil: xpwn \
 iBoot32Patcher: https://github.com/Merculous/iBoot32Patcher \
-xpwntool: xpwn \
 7zip: this is for getting the mount name for the rootfs \
 ldid: https://github.com/ProcursusTeam/ldid
 
@@ -43,15 +42,12 @@ Before running, make sure your device is connected to the internet.
 This is to get the keys for your specified ipsw
 
 All you need to do is run `./tool --ipsw "your ipsw here"` to make a
-bundle. If you also want to make a ipsw, just add `--make`
+bundle.
 
 # after bundle creation
 
 Your bundle will be inside `bundles`, everything that you need to have a barebones custom ipsw will be inside the bundle corresponding to the ipsw you had provided, except ramdisk patches.
 
-I only have ramdisk patches added when `--make` is specified. I need
-to do more testing to incorporate ramdisk patches to work exactly how
-xpwn would expect them
 
 # restoring
 
@@ -62,7 +58,8 @@ Use https://github.com/Merculous/idevicerestore with `-c` for restoring with a c
 - The kernel MUST be patched
 - iOS 6+ requires restored_external to be patched. Simply patch the branch to _ramrod_ticket_update
 
-The error below is definitely tied to restored_external but I also believe some versions also check this in the kernel
+The error below is definitely tied to restored_external but AppleImage3NORAccess needs to be patched
+for unpersonalized/unsigned images to bypass this error.
 
 entering update_iBoot  
 write_image3_data: flashing LLB data (length = 0x241d0)  
