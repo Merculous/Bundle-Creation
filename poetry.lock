@@ -202,13 +202,13 @@ files = [
 
 [[package]]
 name = "pyimg3lib"
-version = "1.0.8"
+version = "1.0.9"
 description = "iOS Image3 lib"
 optional = false
 python-versions = ">=3.11,<4.0"
 files = [
-    {file = "pyimg3lib-1.0.8-py3-none-any.whl", hash = "sha256:8026685d3c6d7fb0d395847ccd28d19f597396edc06fd3703aa747c7f3bc372b"},
-    {file = "pyimg3lib-1.0.8.tar.gz", hash = "sha256:ddbad9c5ecd78b7c669db3b60dbdc58208b0153f01a767add64c1f021b11a5ec"},
+    {file = "pyimg3lib-1.0.9-py3-none-any.whl", hash = "sha256:f3276296d4edb877fbedd58b67a18f7e07838f5c1f8af70c0ca46ec2059c7e9c"},
+    {file = "pyimg3lib-1.0.9.tar.gz", hash = "sha256:5e23bc2b2321baa2b71b5c40a61862d0c39b802396bbacf6fbce131ab3250727"},
 ]
 
 [package.dependencies]
@@ -326,4 +326,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "3a08c464d6fa1379787243d18c09d3e41e8a300ce14adfce3ee05fcdfe790d32"
+content-hash = "43a822faf0f0d0fde450efbbb7504478a56797d9076aa0158749f0c904d3b022"
