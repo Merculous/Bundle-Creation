@@ -131,7 +131,12 @@ class IPSW(Archive):
 
                     img3file = IMG3(data, iv, key)
 
-                    decrypted_data = img3file.decrypt()
+                    decrypted_data = None
+
+                    if name != 'KernelCache':
+                        decrypted_data = img3file.decrypt()
+                    else:
+                        decrypted_data = img3file.decrypt(True)
 
                     writeBinaryFile(decrypted_data, decrypted)
 
